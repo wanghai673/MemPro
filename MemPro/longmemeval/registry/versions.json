@@ -1,0 +1,42 @@
+{
+  "benchmark": "longmemeval",
+  "description": "Public MemPro evolution workspace for longmemeval.",
+  "versions": [
+    {
+      "version_id": "v0000",
+      "parent_version": null,
+      "role": "initial_framework",
+      "status": "available",
+      "version_dir": "versions/v0000",
+      "files": [
+        "memory_agent.py",
+        "research_agent.py",
+        "memory_prompts.py",
+        "research_prompts.py"
+      ],
+      "metrics": {
+        "train_score": null,
+        "test_score": null
+      },
+      "notes": "Initial MemPro framework snapshot."
+    },
+    {
+      "version_id": "v_best",
+      "parent_version": "v0000",
+      "role": "evolved_best",
+      "status": "available",
+      "version_dir": "versions/v_best",
+      "files": [
+        "memory_agent.py",
+        "research_agent.py",
+        "memory_prompts.py",
+        "research_prompts.py"
+      ],
+      "metrics": {
+        "train_score": null,
+        "test_score": null
+      },
+      "notes": "Best evolved LongMemEval framework used for inference."
+    }
+  ]
+}

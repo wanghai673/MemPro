@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mempro-memory"
+version = "0.1.0"
+description = "MemPro initial framework and evolved inference runtimes."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[tool.setuptools]
+packages = [
+  "mempro_memory",
+  "mempro_memory.agents",
+  "mempro_memory.config",
+  "mempro_memory.generator",
+  "mempro_memory.prompts",
+  "mempro_memory.retriever",
+  "mempro_memory.schemas",
+]
+package-dir = {"mempro_memory" = "initial_framework"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
