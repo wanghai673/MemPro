@@ -266,3 +266,7 @@ MemPro also builds on ideas and code from prior memory-framework research:
 
 - [General Agentic Memory (GAM)](https://github.com/VectorSpaceLab/general-agentic-memory)
 - [LightMem](https://github.com/zjunlp/LightMem)
+
+## 📄 License
+
+This project is released under the MIT License.
