@@ -56,9 +56,6 @@ benchmark has its own `AGENTS.md`, registry, scripts, and version snapshots.
 
 ## 🎯 Quick Start
 
-Follow these steps slowly the first time. The evaluation scripts expect data,
-dependencies, and model credentials to be ready before running.
-
 ### 1. Clone
 
 ```bash
@@ -96,9 +93,6 @@ data/hotpotqa/eval_3200.json
 data/narrativeqa/*.parquet
 ```
 
-LongMemEval also needs a memory cache. The LongMemEval evaluation script now
-builds missing cache entries automatically before evaluation.
-
 ### 4. Configure `.env`
 
 ```bash
@@ -133,17 +127,11 @@ when your machine and API quota can support parallel requests.
 bash scripts/eval_locomo.sh
 ```
 
-Uses `data/locomo/locomo10.json` and writes to `results/locomo`.
-
 ### LongMemEval
 
 ```bash
 bash scripts/eval_longmemeval.sh
 ```
-
-Uses `data/longmemeval/longmemeval_s_cleaned.json`, writes to
-`results/longmemeval`, and builds missing memory cache entries under
-`data/longmemeval/memory/_memory_cache` automatically.
 
 ### HotpotQA
 
