@@ -66,16 +66,11 @@ git clone https://github.com/wanghai673/MemPro.git
 cd MemPro
 ```
 
-### 2. Create A Conda Environment
+### 2. Create Environment And Install Dependencies
 
 ```bash
 conda create -n mempro python=3.10 -y
 conda activate mempro
-```
-
-### 3. Install Dependencies
-
-```bash
 pip install -r requirements.txt
 pip install -e .
 ```
@@ -84,7 +79,7 @@ pip install -e .
 `initial_framework/`. Evaluation scripts override it with the best evolved
 runtime for each benchmark.
 
-### 4. Download Data
+### 3. Download Data
 
 ```bash
 bash scripts/download_data.sh
@@ -104,7 +99,7 @@ data/narrativeqa/*.parquet
 LongMemEval also needs a memory cache. The LongMemEval evaluation script now
 builds missing cache entries automatically before evaluation.
 
-### 5. Configure `.env`
+### 4. Configure `.env`
 
 ```bash
 cp .env.example .env
@@ -127,232 +122,56 @@ excludes it from version control.
 
 ## 🧪 Part 1: Evaluation
 
-This is the main reproducibility path. Each script loads `.env`, points
-`PYTHONPATH` to the corresponding runtime under `best_versions/`, writes
-outputs to `results/`, and writes logs to `logs/`.
-
-General model settings can be shared by all benchmarks:
-
-```bash
-OPENAI_API_KEY=your_api_key_here
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_MODEL=gpt-4o-mini
-OPENAI_API_TYPE=openai
-```
-
-For benchmarks with separate memory, research, working, or judge calls, you can
-override the shared settings with role-specific variables:
-
-```bash
-MEMORY_MODEL=gpt-4o-mini
-RESEARCH_MODEL=gpt-4o-mini
-WORKING_MODEL=gpt-4o-mini
-JUDGE_MODEL=gpt-4o-mini
-```
-
-Common runtime knobs:
-
-```bash
-MEMPRO_NUM_WORKERS=16
-MEMPRO_QUESTION_WORKERS=32
-MEMPRO_EMBEDDING_MODEL=BAAI/bge-m3
-MEMPRO_DENSE_DEVICES=cuda:0
-```
+Each evaluation script loads `.env`, uses the corresponding runtime under
+`best_versions/`, writes outputs to `results/`, and writes logs to `logs/`.
+The default worker count is `1`; increase it with environment variables only
+when your machine and API quota can support parallel requests.
 
 ### LoCoMo
 
-Run the default LoCoMo evaluation:
-
 ```bash
 bash scripts/eval_locomo.sh
 ```
 
-Default paths:
-
-```text
-data:    data/locomo/locomo10.json
-outputs: results/locomo
-log:     logs/locomo_inference.log
-runtime: best_versions/locomo
-```
-
-Useful overrides:
-
-```bash
-LOCOMO_DATA=data/locomo/locomo10.json \
-LOCOMO_OUTDIR=results/locomo \
-MEMPRO_QUESTION_WORKERS=32 \
-bash scripts/eval_locomo.sh
-```
-
-You can pass evaluation-driver arguments after the script name:
-
-```bash
-bash scripts/eval_locomo.sh --start-idx 0 --end-idx 10
-```
+Uses `data/locomo/locomo10.json` and writes to `results/locomo`.
 
 ### LongMemEval
 
-Run the default LongMemEval evaluation:
-
 ```bash
 bash scripts/eval_longmemeval.sh
 ```
 
-Default paths:
-
-```text
-data:         data/longmemeval/longmemeval_s_cleaned.json
-memory cache: data/longmemeval/memory/_memory_cache
-outputs:      results/longmemeval
-log:          logs/longmemeval_inference.log
-runtime:      best_versions/longmemeval
-```
-
-The script builds missing memory cache entries automatically by default. If you
-already have a complete cache and want to forbid rebuilding, set
-`LONGMEMEVAL_BUILD_MEMORY_IF_MISSING=0`.
-
-Useful overrides:
-
-```bash
-LONGMEMEVAL_START_IDX=0 \
-LONGMEMEVAL_END_IDX=10 \
-LONGMEMEVAL_OUTDIR=results/longmemeval \
-MEMORY_BUILD_WORKERS=4 \
-MEMPRO_NUM_WORKERS=16 \
-MEMPRO_DENSE_DEVICES=cuda:0 \
-bash scripts/eval_longmemeval.sh
-```
-
-Retrieval options:
-
-```bash
-LONGMEMEVAL_USE_BM25=1 \
-LONGMEMEVAL_USE_DENSE=1 \
-MEMPRO_EMBEDDING_MODEL=BAAI/bge-m3 \
-bash scripts/eval_longmemeval.sh
-```
-
-Cache options:
-
-```bash
-LONGMEMEVAL_BUILD_MEMORY_IF_MISSING=1 \
-LONGMEMEVAL_FORCE_REBUILD_MEMORY=0 \
-LONGMEMEVAL_MEMORY_ROOT=data/longmemeval/memory/_memory_cache \
-bash scripts/eval_longmemeval.sh
-```
+Uses `data/longmemeval/longmemeval_s_cleaned.json`, writes to
+`results/longmemeval`, and builds missing memory cache entries under
+`data/longmemeval/memory/_memory_cache` automatically.
 
 ### HotpotQA
 
-Run the default HotpotQA evaluation:
-
 ```bash
 bash scripts/eval_hotpotqa.sh
-```
-
-Default paths:
-
-```text
-data:    data/hotpotqa/eval_400.json
-outputs: results/hotpotqa
-log:     logs/hotpotqa_inference.log
-runtime: best_versions/hotpotqa
-```
-
-Choose a different context-length file:
-
-```bash
-HOTPOTQA_DATA=data/hotpotqa/eval_1600.json \
-bash scripts/eval_hotpotqa.sh
-```
-
-Useful overrides:
-
-```bash
-HOTPOTQA_OUTDIR=results/hotpotqa \
-HOTPOTQA_NUM_WORKERS=16 \
-HOTPOTQA_MEMORY_WORKERS=1 \
-HOTPOTQA_MAX_TOKENS=2048 \
-bash scripts/eval_hotpotqa.sh
+HOTPOTQA_DATA=data/hotpotqa/eval_1600.json bash scripts/eval_hotpotqa.sh
+HOTPOTQA_DATA=data/hotpotqa/eval_3200.json bash scripts/eval_hotpotqa.sh
 ```
 
 ### NarrativeQA
 
-Run the default NarrativeQA evaluation:
-
 ```bash
-bash scripts/eval_narrativeqa.sh
-```
-
-Default paths and range:
-
-```text
-data dir: data/narrativeqa
-split:    test
-range:    0..300
-outputs:  results/narrativeqa
-log:      logs/narrativeqa_inference.log
-runtime:  best_versions/narrativeqa
-```
-
-Useful overrides:
-
-```bash
-NARRATIVEQA_START_IDX=0 \
-NARRATIVEQA_END_IDX=50 \
-NARRATIVEQA_SPLIT=test \
-NARRATIVEQA_OUTDIR=results/narrativeqa \
-MEMPRO_NUM_WORKERS=16 \
-MEMPRO_DENSE_DEVICES=cuda:0 \
 bash scripts/eval_narrativeqa.sh
 ```
 
 ## 🧬 Part 2: Evolution
 
-The `MemPro/` directory contains benchmark-specific evolution workspaces. Each
-workspace has:
-
-- `AGENTS.md`: detailed instructions for Codex
-- `versions/`: editable framework snapshots
-- `registry/versions.json`: version-tree metadata
-- `scripts/`: base selection, version registration, and evaluation helpers
-- `runs/`: generated evolution outputs
-
-To inspect a workspace manually:
-
-```bash
-cd MemPro/hotpotqa
-python scripts/select_base.py
-python scripts/register_version.py --dry-run --note "try one coherent change"
-```
-
-### Launch Codex For Evolution
-
-The helper below selects a benchmark workspace and asks Codex to read
-`AGENTS.md` before continuing evolution.
-
-Dry run first:
-
-```bash
-python scripts/run_evolution.py hotpotqa --dry-run
-```
-
-Execute with Codex:
+The `MemPro/` directory contains benchmark-specific evolution workspaces. To
+continue evolution with Codex, choose a benchmark:
 
 ```bash
 python scripts/run_evolution.py hotpotqa --execute
-```
-
-Choose another benchmark:
-
-```bash
 python scripts/run_evolution.py locomo --execute
 python scripts/run_evolution.py longmemeval --execute
 python scripts/run_evolution.py narrativeqa --execute
 ```
 
-By default, the launcher uses `gpt-5.4-medium`:
+Choose a model if needed:
 
 ```bash
 python scripts/run_evolution.py hotpotqa --model gpt-5.4-medium --execute

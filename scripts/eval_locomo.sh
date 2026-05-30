@@ -8,7 +8,7 @@ set +a
 # Editable parameters
 DATA="${LOCOMO_DATA:-data/locomo/locomo10.json}"
 OUTDIR="${LOCOMO_OUTDIR:-results/locomo}"
-QUESTION_WORKERS="${MEMPRO_QUESTION_WORKERS:-32}"
+QUESTION_WORKERS="${MEMPRO_QUESTION_WORKERS:-1}"
 PYTHONPATH_PREFIX="${LOCOMO_PYTHONPATH_PREFIX:-best_versions/locomo}"
 LOG_FILE="${LOCOMO_LOG_FILE:-logs/locomo_inference.log}"
 
