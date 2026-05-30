@@ -289,11 +289,6 @@ class ResearchAgent:
             prompt = template_prompt
         self._last_planning_prompt = prompt
         
-        # 调试：打印prompt长度
-        prompt_chars = len(prompt)
-        estimated_tokens = prompt_chars // 4  # 粗略估算：1 token ≈ 4 字符
-        print(f"[DEBUG] Planning prompt length: {prompt_chars} chars (~{estimated_tokens} tokens)")
-
         try:
             data = self._generate_structured_with_retry(
                 prompt=prompt,
@@ -673,11 +668,6 @@ class ResearchAgent:
         try:
             system_prompt = self.system_prompts.get("reflection")
             
-            # 调试：打印reflection prompt长度
-            result_content_chars = len(result.content)
-            estimated_result_tokens = result_content_chars // 4
-            print(f"[DEBUG] Reflection result.content length: {result_content_chars} chars (~{estimated_result_tokens} tokens)")
-            
             # Step 1: Check for completeness of information
             template_check_prompt = InfoCheck_PROMPT.format(request=request, result=result.content)
             if system_prompt:
@@ -688,10 +678,6 @@ class ResearchAgent:
                 "check_prompt": check_prompt,
                 "generate_prompt": "",
             }
-            check_prompt_chars = len(check_prompt)
-            estimated_check_tokens = check_prompt_chars // 4
-            print(f"[DEBUG] Reflection check_prompt length: {check_prompt_chars} chars (~{estimated_check_tokens} tokens)")
-            
             check_data = self._generate_structured_with_retry(
                 prompt=check_prompt,
                 schema=INFO_CHECK_SCHEMA,
@@ -718,10 +704,6 @@ class ResearchAgent:
                 "check_prompt": check_prompt,
                 "generate_prompt": generate_prompt,
             }
-            generate_prompt_chars = len(generate_prompt)
-            estimated_generate_tokens = generate_prompt_chars // 4
-            print(f"[DEBUG] Reflection generate_prompt length: {generate_prompt_chars} chars (~{estimated_generate_tokens} tokens)")
-            
             generate_data = self._generate_structured_with_retry(
                 prompt=generate_prompt,
                 schema=GENERATE_REQUESTS_SCHEMA,

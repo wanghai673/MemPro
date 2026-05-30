@@ -63,7 +63,7 @@ Important:
 - do not directly edit `../../best_versions/longmemeval/mempro_memory/`
 - `scripts/run_eval.py` materializes a temporary runtime under
   `runs/<version_id>/runtime_parent/`
-- LongMemEval evaluation may require prebuilt memory cache before question-time
+- LongMemEval evaluation auto-builds missing memory cache before question-time
   research evaluation
 
 ## Registered Versions
@@ -80,9 +80,7 @@ version roles, and metrics.
 
 At the start of a LongMemEval evolution session, inspect:
 
-- `../../eval/build_longmemeval_memory.py`
 - `../../eval/longmemeval_test.py`
-- `../../scripts/build_longmemeval_memory.sh`
 - `../../scripts/eval_longmemeval.sh`
 - `../../best_versions/longmemeval/mempro_memory/agents/memory_agent.py`
 - `../../best_versions/longmemeval/mempro_memory/agents/research_agent.py`
@@ -93,9 +91,9 @@ At the start of a LongMemEval evolution session, inspect:
 - `registry/versions.json`
 - recent memory caches and traces under `runs/` when available
 
-Use these files to understand how memory is built once, how cached memory is
-loaded, how question-time retrieval works, and how the judge determines whether
-the research summary contains the answer.
+Use these files to understand how memory is auto-built when needed, how cached
+memory is loaded, how question-time retrieval works, and how the judge
+determines whether the research summary contains the answer.
 
 ## Continuous Iteration Loop
 
@@ -141,10 +139,11 @@ Memory construction changes require rebuilding the cache. Question-time-only
 changes can reuse compatible memory cache if the run records that reuse
 clearly.
 
-For memory-building runs, use the repository script shape:
+For memory-building runs, use the unified evaluation entrypoint with rebuild
+flags:
 
 ```bash
-../../scripts/build_longmemeval_memory.sh
+../../scripts/eval_longmemeval.sh
 ```
 
 For research evaluation through this workspace:

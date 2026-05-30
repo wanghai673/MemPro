@@ -873,22 +873,17 @@ def process_sample(
                 research_summary = result.integrated_memory
                 iterations = result.raw_memory.get("iterations", [])
                 print(f"[问题 {i}] [OK] 研究完成！迭代次数: {len(iterations)}")
+                print(f"[问题 {i}] question: {q}")
+                print(f"[问题 {i}] ground truth: {gold}")
                 print(f"[问题 {i}] 研究摘要: {research_summary[:200]}...")
 
                 formatted_iterations = []
                 for item in iterations:
                     formatted_iterations.append({
                         "step": item.get("step"),
-                        "route": item.get("route"),
-                        "selected_page_ids_before_step": item.get("selected_page_ids_before_step"),
-                        "retrieved_page_ids": item.get("retrieved_page_ids"),
-                        "new_page_ids": item.get("new_page_ids"),
-                        "repeated_page_ids": item.get("repeated_page_ids"),
                         "plan": item.get("plan"),
                         "temp_memory": item.get("temp_memory"),
                         "decision": item.get("decision"),
-                        "llm_calls": item.get("llm_calls"),
-                        "usage": item.get("usage"),
                     })
 
                 research_trace = {
@@ -897,9 +892,6 @@ def process_sample(
                     "question_index": question_index,
                     "question": q,
                     "ground_truth": gold,
-                    "router": result.raw_memory.get("router"),
-                    "route": result.raw_memory.get("route"),
-                    "selected_page_ids": result.raw_memory.get("selected_page_ids"),
                     "iterations": formatted_iterations,
                     "integrated_memory": result.integrated_memory,
                 }
@@ -922,45 +914,15 @@ def process_sample(
                 )
                 judge_score = llm_judge_score(judge_label)
 
-                research_usage = result.raw_memory.get("usage") or make_usage_stats(q, research_summary)
-                answer_usage = make_usage_stats(
-                    {
-                        "question": q,
-                        "research_summary": research_summary,
-                        "answer_generation": answer_trace,
-                    },
-                    summary_answer,
-                )
-                judge_usage = make_usage_stats(
-                    {
-                        "question": q,
-                        "gold_answer": str(gold),
-                        "generated_answer": str(summary_answer),
-                    },
-                    judge_label,
-                )
-                question_usage = {
-                    "research": research_usage,
-                    "answer": answer_usage,
-                    "judge": judge_usage,
-                    "input_bytes": research_usage["input_bytes"] + answer_usage["input_bytes"] + judge_usage["input_bytes"],
-                    "output_bytes": research_usage["output_bytes"] + answer_usage["output_bytes"] + judge_usage["output_bytes"],
-                    "input_tokens_approx": research_usage["input_tokens_approx"] + answer_usage["input_tokens_approx"] + judge_usage["input_tokens_approx"],
-                    "output_tokens_approx": research_usage["output_tokens_approx"] + answer_usage["output_tokens_approx"] + judge_usage["output_tokens_approx"],
-                }
-                question_usage["total_tokens_approx"] = question_usage["input_tokens_approx"] + question_usage["output_tokens_approx"]
-                
                 print(f"[问题 {i}] 预测答案: {summary_answer}")
                 print(f"[问题 {i}] F1: {f1:.4f}, BLEU1: {b1:.4f}, LLM_JUDGE: {judge_label}")
 
+                research_trace["research_answer"] = result.integrated_memory
                 research_trace["summary_answer"] = summary_answer
-                research_trace["answer_generation"] = answer_trace
                 research_trace["f1"] = f1
                 research_trace["b1"] = b1
                 research_trace["llm_as_judge"] = judge_label
                 research_trace["llm_as_judge_score"] = judge_score
-                research_trace["usage"] = question_usage
-                research_trace["research_agent_usage"] = result.raw_memory.get("usage")
 
                 # 保存单个问题的研究轨迹
                 trace_file = os.path.join(sample_results_dir, f"research_trace_q{question_index}.json")
@@ -982,8 +944,6 @@ def process_sample(
                     "b1": b1,
                     "llm_as_judge": judge_label,
                     "llm_as_judge_score": judge_score,
-                    "usage": question_usage,
-                    "research_agent_usage": result.raw_memory.get("usage"),
                     "iterations": len(result.raw_memory.get("iterations", [])),
                     "research_trace_file": trace_file
                 }
@@ -1256,33 +1216,15 @@ def main():
         all_f1_scores = [row["F1"] for row in details]
         all_bleu1_scores = [row["BLEU1"] for row in details]
         all_judge_scores = [row["llm_as_judge_score"] for row in details]
-        all_input_tokens = [row.get("usage", {}).get("input_tokens_approx", 0) for row in details]
-        all_output_tokens = [row.get("usage", {}).get("output_tokens_approx", 0) for row in details]
-        all_total_tokens = [row.get("usage", {}).get("total_tokens_approx", 0) for row in details]
-        all_research_input_tokens = [row.get("research_agent_usage", {}).get("input_tokens_approx", 0) for row in details]
-        all_research_output_tokens = [row.get("research_agent_usage", {}).get("output_tokens_approx", 0) for row in details]
-        all_research_total_tokens = [row.get("research_agent_usage", {}).get("total_tokens_approx", 0) for row in details]
         overall_f1_avg = sum(all_f1_scores) / len(all_f1_scores) if all_f1_scores else 0.0
         overall_bleu1_avg = sum(all_bleu1_scores) / len(all_bleu1_scores) if all_bleu1_scores else 0.0
         overall_llm_as_judge_avg = sum(all_judge_scores) / len(all_judge_scores) if all_judge_scores else 0.0
-        avg_input_tokens_approx = sum(all_input_tokens) / len(all_input_tokens) if all_input_tokens else 0.0
-        avg_output_tokens_approx = sum(all_output_tokens) / len(all_output_tokens) if all_output_tokens else 0.0
-        avg_total_tokens_approx = sum(all_total_tokens) / len(all_total_tokens) if all_total_tokens else 0.0
-        avg_research_input_tokens_approx = sum(all_research_input_tokens) / len(all_research_input_tokens) if all_research_input_tokens else 0.0
-        avg_research_output_tokens_approx = sum(all_research_output_tokens) / len(all_research_output_tokens) if all_research_output_tokens else 0.0
-        avg_research_total_tokens_approx = sum(all_research_total_tokens) / len(all_research_total_tokens) if all_research_total_tokens else 0.0
         
         print(f"\n整体统计:")
         print(f"总问题数: {len(all_results)}")
         print(f"整体平均 F1: {overall_f1_avg:.4f}")
         print(f"整体平均 BLEU1: {overall_bleu1_avg:.4f}")
         print(f"整体平均 llm_as_judge: {overall_llm_as_judge_avg:.4f}")
-        print(f"平均输入 tokens(approx): {avg_input_tokens_approx:.2f}")
-        print(f"平均输出 tokens(approx): {avg_output_tokens_approx:.2f}")
-        print(f"平均总 tokens(approx): {avg_total_tokens_approx:.2f}")
-        print(f"平均 ResearchAgent 输入 tokens(approx): {avg_research_input_tokens_approx:.2f}")
-        print(f"平均 ResearchAgent 输出 tokens(approx): {avg_research_output_tokens_approx:.2f}")
-        print(f"平均 ResearchAgent 总 tokens(approx): {avg_research_total_tokens_approx:.2f}")
         
         # 保存统计信息到 JSON 文件（类似 hotpotqa_test.py）
         processed_sample_ids = sorted({row.get("sample_id") for row in all_results if row.get("sample_id")})
@@ -1293,12 +1235,6 @@ def main():
             "overall_f1_avg": overall_f1_avg,
             "overall_bleu1_avg": overall_bleu1_avg,
             "overall_llm_as_judge_avg": overall_llm_as_judge_avg,
-            "avg_input_tokens_approx": avg_input_tokens_approx,
-            "avg_output_tokens_approx": avg_output_tokens_approx,
-            "avg_total_tokens_approx": avg_total_tokens_approx,
-            "avg_research_input_tokens_approx": avg_research_input_tokens_approx,
-            "avg_research_output_tokens_approx": avg_research_output_tokens_approx,
-            "avg_research_total_tokens_approx": avg_research_total_tokens_approx,
             "by_category": summary,
             "details": details,
             "start_idx": args.start_idx,

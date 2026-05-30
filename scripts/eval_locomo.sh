@@ -5,11 +5,23 @@ set -a
 [ -f .env ] && source .env
 set +a
 
-mkdir -p results/locomo logs
+# Editable parameters
+DATA="${LOCOMO_DATA:-data/locomo/locomo10.json}"
+OUTDIR="${LOCOMO_OUTDIR:-results/locomo}"
+QUESTION_WORKERS="${MEMPRO_QUESTION_WORKERS:-32}"
+PYTHONPATH_PREFIX="${LOCOMO_PYTHONPATH_PREFIX:-best_versions/locomo}"
+LOG_FILE="${LOCOMO_LOG_FILE:-logs/locomo_inference.log}"
 
-PYTHONPATH="best_versions/locomo:${PYTHONPATH:-}" \
+# Example:
+# EXTRA_ARGS+=(--start-idx 0 --end-idx 0)
+EXTRA_ARGS=()
+
+mkdir -p "$OUTDIR" logs
+
+PYTHONPATH="${PYTHONPATH_PREFIX}:${PYTHONPATH:-}" \
 python -u eval/locomo_test.py \
-  --data "${LOCOMO_DATA:-data/locomo/locomo10.json}" \
-  --outdir "${LOCOMO_OUTDIR:-results/locomo}" \
-  --question-workers "${MEMPRO_QUESTION_WORKERS:-32}" \
-  "$@" 2>&1 | tee logs/locomo_inference.log
+  --data "$DATA" \
+  --outdir "$OUTDIR" \
+  --question-workers "$QUESTION_WORKERS" \
+  "${EXTRA_ARGS[@]}" \
+  "$@" 2>&1 | tee "$LOG_FILE"

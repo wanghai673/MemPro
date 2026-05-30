@@ -3,29 +3,33 @@
 """
 LongMemEval test harness for MemPro.
 
-This script assumes memory has already been built and stored under:
-  <memory_root>/_memory_cache/<sample_cache_key>/
+This script can automatically build missing memory caches under:
+  <memory_root>/<sample_cache_key>/
 
 For each sample, it:
-  1) loads the prebuilt memory/page cache
-  2) runs ResearchAgent only
-  3) records planner/search traces including retrieved page_ids
-  4) judges whether research_summary contains the gold answer
-  5) saves per-sample traces and a global results file
+  1) ensures the required memory/page cache exists
+  2) loads the cache
+  3) runs ResearchAgent only
+  4) records planner/search traces including retrieved page_ids
+  5) judges whether research_summary contains the gold answer
+  6) saves per-sample traces and a global results file
 """
 
 from __future__ import annotations
 
 import argparse
 import concurrent.futures as cf
+import hashlib
 import json
 import os
 import re
 import shutil
+import traceback
 from typing import Any, Dict, List, Optional
 
 from tqdm import tqdm
 
+from mempro_memory.agents.memory_agent import MemoryAgent
 from mempro_memory.agents.research_agent import ResearchAgent
 from mempro_memory.generator.openai_generator import OpenAIGenerator
 from mempro_memory.generator.vllm_generator import VLLMGenerator
@@ -118,11 +122,12 @@ def build_retrievers(args: argparse.Namespace, index_dir: str, page_store: InMem
             dense_index_dir = os.path.join(index_dir, "dense_index")
             if os.path.exists(dense_index_dir):
                 shutil.rmtree(dense_index_dir)
+            dense_retriever_devices = parse_dense_devices(args.dense_devices)
             dense_config = DenseRetrieverConfig(
                 index_dir=dense_index_dir,
                 model_name=args.dense_model,
                 api_url=args.dense_api_url,
-                devices=args.dense_devices,
+                devices=dense_retriever_devices,
             )
             dense_retriever = DenseRetriever(dense_config.__dict__)
             dense_retriever.build(page_store)
@@ -130,8 +135,15 @@ def build_retrievers(args: argparse.Namespace, index_dir: str, page_store: InMem
             print("[OK] Dense retriever created")
         except Exception as e:
             print(f"[WARN] Dense retriever creation failed: {e}")
+            traceback.print_exc()
 
     return retrievers
+
+
+def parse_dense_devices(dense_devices: Optional[str]) -> List[str]:
+    if not dense_devices:
+        return []
+    return [item.strip() for item in dense_devices.split(",") if item.strip()]
 
 
 def normalize_text(s: str) -> str:
@@ -222,6 +234,178 @@ def load_samples(data_path: str) -> List[Dict[str, Any]]:
     raise ValueError("Expected the LongMemeEval JSON to be a list.")
 
 
+ASSISTANT_CONTENT_CHAR_LIMIT = 4000
+ASSISTANT_CONTENT_EDGE_CHARS = 2000
+
+
+def truncate_assistant_content(role: Any, content: Any) -> str:
+    content_text = str(content)
+    if str(role).lower() != "assistant":
+        return content_text
+    if len(content_text) <= ASSISTANT_CONTENT_CHAR_LIMIT:
+        return content_text
+    return content_text[:ASSISTANT_CONTENT_EDGE_CHARS] + content_text[-ASSISTANT_CONTENT_EDGE_CHARS:]
+
+
+def session_to_text(session: Any, session_id: str, date: str, index: int) -> str:
+    items: List[Dict[str, str]] = [
+        {
+            "session_name": f"SESSION {index}",
+            "session_time": date,
+        }
+    ]
+    if isinstance(session, list):
+        for turn in session:
+            if isinstance(turn, dict):
+                role = turn.get("role") or turn.get("speaker") or "unknown"
+                content = turn.get("content") or turn.get("text") or ""
+                items.append(
+                    {
+                        "role": str(role),
+                        "content": truncate_assistant_content(role, content),
+                        "session_time": date,
+                    }
+                )
+            else:
+                items.append(
+                    {
+                        "role": "unknown",
+                        "content": str(turn),
+                        "session_time": date,
+                    }
+                )
+    else:
+        items.append(
+            {
+                "role": "unknown",
+                "content": str(session),
+                "session_time": date,
+            }
+        )
+    return json.dumps(items, ensure_ascii=False, indent=2)
+
+
+def memory_key(sample: Dict[str, Any], sample_index: int) -> str:
+    session_ids = sample.get("haystack_session_ids") or []
+    if session_ids:
+        raw = "\n".join(str(x) for x in session_ids)
+    else:
+        raw = f"{sample_index}:{sample.get('question_id', '')}"
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()
+
+
+def build_memory_generator(args: argparse.Namespace):
+    return build_generator(
+        api_type=args.memory_api_type,
+        api_key=args.memory_api_key,
+        base_url=args.memory_base_url,
+        model_name=args.memory_model,
+        max_tokens=args.memory_max_tokens,
+        temperature=args.memory_temperature,
+        use_schema=False,
+        default_headers={"api-key": args.memory_api_key} if args.memory_api_key else None,
+    )
+
+
+def build_one_memory_cache(sample_index: int, sample: Dict[str, Any], args: argparse.Namespace) -> Dict[str, Any]:
+    key = memory_key(sample, sample_index)
+    cache_dir = os.path.join(args.memory_root, key)
+    done_file = os.path.join(cache_dir, "_DONE")
+
+    if os.path.exists(done_file) and not args.force_rebuild_memory:
+        return {"sample_index": sample_index, "memory_key": key, "status": "skipped"}
+
+    if os.path.isdir(cache_dir):
+        shutil.rmtree(cache_dir)
+    os.makedirs(cache_dir, exist_ok=True)
+
+    memory_store = InMemoryMemoryStore(dir_path=cache_dir)
+    page_store = InMemoryPageStore(dir_path=cache_dir)
+    generator = build_memory_generator(args)
+    memory_agent = MemoryAgent(
+        memory_store=memory_store,
+        page_store=page_store,
+        generator=generator,
+    )
+
+    sessions = sample.get("haystack_sessions") or []
+    dates = sample.get("haystack_dates") or []
+    session_ids = sample.get("haystack_session_ids") or []
+
+    for i, session in enumerate(sessions):
+        session_id = str(session_ids[i]) if i < len(session_ids) else f"session_{i}"
+        date = str(dates[i]) if i < len(dates) else ""
+        text = session_to_text(session, session_id, date, i)
+        memory_agent.memorize(text)
+        pages = page_store.load()
+        if pages:
+            pages[-1].meta.update(
+                {
+                    "sample_index": sample_index,
+                    "question_id": sample.get("question_id"),
+                    "session_index": i,
+                    "session_id": session_id,
+                    "date": date,
+                }
+            )
+            page_store.save(pages)
+
+    state = memory_store.load()
+    meta = {
+        "memory_key": key,
+        "sample_index": sample_index,
+        "question_id": sample.get("question_id"),
+        "session_ids": [str(x) for x in session_ids],
+        "num_sessions": len(sessions),
+        "num_abstracts": len(state.abstracts),
+    }
+    dump_json(os.path.join(cache_dir, "memory_meta.json"), meta)
+    with open(done_file, "w", encoding="utf-8") as f:
+        f.write("ok\n")
+    return {"sample_index": sample_index, "memory_key": key, "status": "built"}
+
+
+def ensure_memory_caches(
+    samples: List[Dict[str, Any]],
+    sample_indices: List[int],
+    args: argparse.Namespace,
+) -> None:
+    os.makedirs(args.memory_root, exist_ok=True)
+
+    missing_indices = []
+    for idx in sample_indices:
+        cache_dir = os.path.join(args.memory_root, memory_key(samples[idx], idx))
+        done_file = os.path.join(cache_dir, "_DONE")
+        if args.force_rebuild_memory or not os.path.exists(done_file):
+            missing_indices.append(idx)
+
+    if not missing_indices:
+        return
+
+    if not args.build_memory_if_missing and not args.force_rebuild_memory:
+        raise FileNotFoundError(
+            f"Missing LongMemEval memory caches for {len(missing_indices)} samples under {args.memory_root}. "
+            "Re-run with --build-memory-if-missing or provide complete caches."
+        )
+
+    results: List[Dict[str, Any]] = []
+    desc = "Build LongMemEval memory"
+    if args.memory_build_workers <= 1:
+        for idx in tqdm(missing_indices, desc=desc):
+            results.append(build_one_memory_cache(idx, samples[idx], args))
+    else:
+        with cf.ThreadPoolExecutor(max_workers=args.memory_build_workers) as executor:
+            futures = {
+                executor.submit(build_one_memory_cache, idx, samples[idx], args): idx
+                for idx in missing_indices
+            }
+            for future in tqdm(cf.as_completed(futures), total=len(futures), desc=desc):
+                results.append(future.result())
+
+    results.sort(key=lambda r: int(r.get("sample_index", 10**9)))
+    dump_json(os.path.join(os.path.dirname(args.memory_root), "build_manifest.json"), results)
+
+
 def format_question_with_date(sample: Dict[str, Any]) -> str:
     question_date = str(sample.get("question_date", "")).strip()
     question = str(sample.get("question", "")).strip()
@@ -256,7 +440,6 @@ def build_answer_session_cache_index(memory_root: str) -> Dict[str, str]:
 
 def resolve_cache_dir_for_sample(
     sample: Dict[str, Any],
-    cache_dirs_by_order: List[str],
     answer_session_cache_index: Dict[str, str],
     memory_root: str,
     sample_index: int,
@@ -274,7 +457,7 @@ def resolve_cache_dir_for_sample(
             f"answer_session_ids map to multiple cache dirs for {sample.get('question_id')}: "
             f"{sorted(matched_dirs)}"
         )
-    return os.path.join(memory_root, cache_dirs_by_order[sample_index])
+    return os.path.join(memory_root, memory_key(sample, sample_index))
 
 
 def extract_gold_page_ids(cache_dir: str, answer_session_ids: List[str]) -> List[str]:
@@ -410,7 +593,6 @@ def build_generators(args: argparse.Namespace):
 def process_sample(
     idx: int,
     sample: Dict[str, Any],
-    cache_dirs: List[str],
     answer_session_cache_index: Dict[str, str],
     args: argparse.Namespace,
 ) -> Dict[str, Any]:
@@ -420,7 +602,6 @@ def process_sample(
     try:
         cache_dir = resolve_cache_dir_for_sample(
             sample=sample,
-            cache_dirs_by_order=cache_dirs,
             answer_session_cache_index=answer_session_cache_index,
             memory_root=args.memory_root,
             sample_index=idx,
@@ -466,6 +647,23 @@ def main() -> None:
     parser.add_argument("--end-idx", type=int, default=None)
     parser.add_argument("--max-iters", type=int, default=3)
     parser.add_argument("--num-workers", type=int, default=1, help="Number of questions to process in parallel.")
+    parser.add_argument(
+        "--build-memory-if-missing",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Automatically build missing memory caches before evaluation.",
+    )
+    parser.add_argument(
+        "--force-rebuild-memory",
+        action="store_true",
+        help="Rebuild target-split memory caches even if they already exist.",
+    )
+    parser.add_argument(
+        "--memory-build-workers",
+        type=int,
+        default=int(env_value("MEMORY_BUILD_WORKERS", env_value("MEMPRO_MEMORY_WORKERS", "1")) or "1"),
+        help="Number of workers for memory-cache construction.",
+    )
 
     parser.add_argument("--use-bm25", action="store_true", help="Enable BM25 keyword retrieval.")
     parser.add_argument("--bm25-threads", type=int, default=1)
@@ -478,6 +676,13 @@ def main() -> None:
     )
     parser.add_argument("--dense-api-url", type=str, default=None)
     parser.add_argument("--dense-devices", type=str, default="cuda:0")
+
+    parser.add_argument("--memory-api-key", type=str, default=role_env("MEMORY", "API_KEY", "empty"))
+    parser.add_argument("--memory-base-url", type=str, default=role_env("MEMORY", "BASE_URL", "https://api.openai.com/v1"))
+    parser.add_argument("--memory-model", type=str, default=role_env("MEMORY", "MODEL", "gpt-4o-mini"))
+    parser.add_argument("--memory-api-type", type=str, default=role_env("MEMORY", "API_TYPE", "openai"), choices=["openai", "vllm"])
+    parser.add_argument("--memory-temperature", type=float, default=0.3)
+    parser.add_argument("--memory-max-tokens", type=int, default=1024)
 
     parser.add_argument("--research-api-key", type=str, default=role_env("RESEARCH", "API_KEY", "empty"))
     parser.add_argument("--research-base-url", type=str, default=role_env("RESEARCH", "BASE_URL", "https://api.openai.com/v1"))
@@ -496,14 +701,9 @@ def main() -> None:
     args = parser.parse_args()
 
     samples = load_samples(args.data)
-    cache_dirs = list_sorted_dirs(args.memory_root)
-    if len(cache_dirs) < len(samples):
-        raise ValueError(
-            f"Not enough cache dirs: found {len(cache_dirs)}, expected at least {len(samples)}"
-        )
-
     end_idx = args.end_idx if args.end_idx is not None else len(samples)
     sample_indices = list(range(args.start_idx, min(end_idx, len(samples))))
+    ensure_memory_caches(samples, sample_indices, args)
     answer_session_cache_index = build_answer_session_cache_index(args.memory_root)
 
     os.makedirs(args.outdir, exist_ok=True)
@@ -515,7 +715,6 @@ def main() -> None:
                 process_sample(
                     idx=idx,
                     sample=samples[idx],
-                    cache_dirs=cache_dirs,
                     answer_session_cache_index=answer_session_cache_index,
                     args=args,
                 )
@@ -527,7 +726,6 @@ def main() -> None:
                     process_sample,
                     idx,
                     samples[idx],
-                    cache_dirs,
                     answer_session_cache_index,
                     args,
                 ): idx

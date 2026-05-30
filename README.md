@@ -101,12 +101,8 @@ data/hotpotqa/eval_3200.json
 data/narrativeqa/*.parquet
 ```
 
-LongMemEval also needs a memory cache. The LongMemEval evaluation script builds
-it automatically if missing, or you can build it explicitly:
-
-```bash
-bash scripts/build_longmemeval_memory.sh
-```
+LongMemEval also needs a memory cache. The LongMemEval evaluation script now
+builds missing cache entries automatically before evaluation.
 
 ### 5. Configure `.env`
 
@@ -129,28 +125,55 @@ You can also set role-specific variables such as `MEMORY_MODEL`,
 Keep `.env` local because it contains credentials. The repository already
 excludes it from version control.
 
-### 6. Run A Smoke Test
-
-Before launching a full benchmark, run one or a few examples:
-
-```bash
-bash scripts/eval_locomo.sh --end-idx 1
-bash scripts/eval_longmemeval.sh --end-idx 1
-bash scripts/eval_hotpotqa.sh --end-idx 1
-bash scripts/eval_narrativeqa.sh --end-idx 1
-```
-
-Outputs go to `results/`; logs go to `logs/`.
-
 ## 🧪 Part 1: Evaluation
 
-This is the main reproducibility path. It runs the best evolved MemPro versions
-stored in `best_versions/`.
+This is the main reproducibility path. Each script loads `.env`, points
+`PYTHONPATH` to the corresponding runtime under `best_versions/`, writes
+outputs to `results/`, and writes logs to `logs/`.
+
+General model settings can be shared by all benchmarks:
+
+```bash
+OPENAI_API_KEY=your_api_key_here
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_API_TYPE=openai
+```
+
+For benchmarks with separate memory, research, working, or judge calls, you can
+override the shared settings with role-specific variables:
+
+```bash
+MEMORY_MODEL=gpt-4o-mini
+RESEARCH_MODEL=gpt-4o-mini
+WORKING_MODEL=gpt-4o-mini
+JUDGE_MODEL=gpt-4o-mini
+```
+
+Common runtime knobs:
+
+```bash
+MEMPRO_NUM_WORKERS=16
+MEMPRO_QUESTION_WORKERS=32
+MEMPRO_EMBEDDING_MODEL=BAAI/bge-m3
+MEMPRO_DENSE_DEVICES=cuda:0
+```
 
 ### LoCoMo
 
+Run the default LoCoMo evaluation:
+
 ```bash
 bash scripts/eval_locomo.sh
+```
+
+Default paths:
+
+```text
+data:    data/locomo/locomo10.json
+outputs: results/locomo
+log:     logs/locomo_inference.log
+runtime: best_versions/locomo
 ```
 
 Useful overrides:
@@ -158,45 +181,131 @@ Useful overrides:
 ```bash
 LOCOMO_DATA=data/locomo/locomo10.json \
 LOCOMO_OUTDIR=results/locomo \
+MEMPRO_QUESTION_WORKERS=32 \
 bash scripts/eval_locomo.sh
 ```
 
+You can pass evaluation-driver arguments after the script name:
+
+```bash
+bash scripts/eval_locomo.sh --start-idx 0 --end-idx 10
+```
+
 ### LongMemEval
+
+Run the default LongMemEval evaluation:
 
 ```bash
 bash scripts/eval_longmemeval.sh
 ```
 
-If you want to build memory first:
+Default paths:
+
+```text
+data:         data/longmemeval/longmemeval_s_cleaned.json
+memory cache: data/longmemeval/memory/_memory_cache
+outputs:      results/longmemeval
+log:          logs/longmemeval_inference.log
+runtime:      best_versions/longmemeval
+```
+
+The script builds missing memory cache entries automatically by default. If you
+already have a complete cache and want to forbid rebuilding, set
+`LONGMEMEVAL_BUILD_MEMORY_IF_MISSING=0`.
+
+Useful overrides:
 
 ```bash
-bash scripts/build_longmemeval_memory.sh
+LONGMEMEVAL_START_IDX=0 \
+LONGMEMEVAL_END_IDX=10 \
+LONGMEMEVAL_OUTDIR=results/longmemeval \
+MEMORY_BUILD_WORKERS=4 \
+MEMPRO_NUM_WORKERS=16 \
+MEMPRO_DENSE_DEVICES=cuda:0 \
+bash scripts/eval_longmemeval.sh
+```
+
+Retrieval options:
+
+```bash
+LONGMEMEVAL_USE_BM25=1 \
+LONGMEMEVAL_USE_DENSE=1 \
+MEMPRO_EMBEDDING_MODEL=BAAI/bge-m3 \
+bash scripts/eval_longmemeval.sh
+```
+
+Cache options:
+
+```bash
+LONGMEMEVAL_BUILD_MEMORY_IF_MISSING=1 \
+LONGMEMEVAL_FORCE_REBUILD_MEMORY=0 \
+LONGMEMEVAL_MEMORY_ROOT=data/longmemeval/memory/_memory_cache \
 bash scripts/eval_longmemeval.sh
 ```
 
 ### HotpotQA
 
+Run the default HotpotQA evaluation:
+
 ```bash
 bash scripts/eval_hotpotqa.sh
 ```
 
-To choose a different context-length file:
+Default paths:
+
+```text
+data:    data/hotpotqa/eval_400.json
+outputs: results/hotpotqa
+log:     logs/hotpotqa_inference.log
+runtime: best_versions/hotpotqa
+```
+
+Choose a different context-length file:
 
 ```bash
-HOTPOTQA_DATA=data/hotpotqa/eval_1600.json bash scripts/eval_hotpotqa.sh
+HOTPOTQA_DATA=data/hotpotqa/eval_1600.json \
+bash scripts/eval_hotpotqa.sh
+```
+
+Useful overrides:
+
+```bash
+HOTPOTQA_OUTDIR=results/hotpotqa \
+HOTPOTQA_NUM_WORKERS=16 \
+HOTPOTQA_MEMORY_WORKERS=1 \
+HOTPOTQA_MAX_TOKENS=2048 \
+bash scripts/eval_hotpotqa.sh
 ```
 
 ### NarrativeQA
+
+Run the default NarrativeQA evaluation:
 
 ```bash
 bash scripts/eval_narrativeqa.sh
 ```
 
-Default NarrativeQA evaluation uses the test split and first 300 examples.
-Adjust with environment variables:
+Default paths and range:
+
+```text
+data dir: data/narrativeqa
+split:    test
+range:    0..300
+outputs:  results/narrativeqa
+log:      logs/narrativeqa_inference.log
+runtime:  best_versions/narrativeqa
+```
+
+Useful overrides:
 
 ```bash
-NARRATIVEQA_END_IDX=50 bash scripts/eval_narrativeqa.sh
+NARRATIVEQA_START_IDX=0 \
+NARRATIVEQA_END_IDX=50 \
+NARRATIVEQA_SPLIT=test \
+NARRATIVEQA_OUTDIR=results/narrativeqa \
+MEMPRO_NUM_WORKERS=16 \
+MEMPRO_DENSE_DEVICES=cuda:0 \
+bash scripts/eval_narrativeqa.sh
 ```
 
 ## 🧬 Part 2: Evolution
@@ -259,7 +368,6 @@ We thank the authors of the following datasets:
 - [HotpotQA](https://github.com/hotpotqa/hotpot)
 - [NarrativeQA](https://github.com/google-deepmind/narrativeqa)
 - [LoCoMo](https://github.com/snap-research/locomo)
-- [RULER](https://github.com/NVIDIA/RULER)
 - [LongMemEval](https://github.com/xiaowu0162/longmemeval)
 
 MemPro also builds on ideas and code from prior memory-framework research:

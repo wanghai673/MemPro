@@ -198,7 +198,10 @@ def _smart_split_by_tokens(text: str, tokens: List[int], max_tokens: int, tokeni
         
         # 将 tokens 解码回文本
         chunk_tokens = tokens[start_idx:end_idx]
-        chunk_text = tokenizer.decode(chunk_tokens, skip_special_tokens=True)
+        try:
+            chunk_text = tokenizer.decode(chunk_tokens, skip_special_tokens=True)
+        except TypeError:
+            chunk_text = tokenizer.decode(chunk_tokens)
         
         if chunk_text.strip():
             chunks.append(f"[Session {session_id}]\n{chunk_text.strip()}")
@@ -744,6 +747,8 @@ def main():
     parser.add_argument("--end-idx", type=int, default=None, help="结束样本索引（不包含），None表示处理所有样本")
     parser.add_argument("--max-tokens", type=int, default=2048, help="每个上下文块的最大 token 数量")
     parser.add_argument("--memory-workers", type=int, default=32, help="并行构建 HotpotQA memory 的 worker 数")
+    parser.add_argument("--num-workers", type=int, default=1,
+                        help="并行处理样本的 worker 数量；1 表示串行")
     parser.add_argument("--embedding-model-path", type=str, default=None, 
                         help="Embedding 模型路径，用于精确 token 计算（可选）")
     
@@ -775,6 +780,7 @@ def main():
     print(f"输出目录: {args.outdir}")
     print(f"样本范围: {args.start_idx} 到 {args.end_idx-1 if args.end_idx else '全部'}")
     print(f"最大 token 数: {args.max_tokens}")
+    print(f"sample workers: {args.num_workers}")
     print(f"memory workers: {args.memory_workers}")
     print("=" * 60)
     
@@ -800,14 +806,17 @@ def main():
     if args.start_idx >= args.end_idx:
         print(f"错误: 开始索引 {args.start_idx} 必须小于结束索引 {args.end_idx}")
         return
+
+    if args.num_workers < 1:
+        print(f"警告: num-workers={args.num_workers} 无效，调整为 1")
+        args.num_workers = 1
     
-    # 串行批量处理样本
+    # 批量处理样本
     sample_indices = list(range(args.start_idx, args.end_idx))
     
-    print(f"开始串行处理样本...")
+    print(f"开始处理样本... worker 数: {args.num_workers}")
     
-    all_results = []
-    for sample_idx in tqdm(sample_indices, desc="处理样本"):
+    def run_one_sample(sample_idx: int) -> Dict[str, Any]:
         sample = all_samples[sample_idx]
         print(f"\n{'='*80}")
         print(f"开始处理样本 {sample_idx}/{len(all_samples)-1} (范围: {args.start_idx}-{args.end_idx-1})")
@@ -836,15 +845,43 @@ def main():
                 working_api_type=args.working_api_type
             )
             print(f"[OK] 样本 {sample_idx} 处理完成")
-            all_results.append(result)
+            return result
         except Exception as e:
             print(f"[ERROR] 样本 {sample_idx} 处理失败: {e}")
             import traceback
             traceback.print_exc()
-            all_results.append({
+            return {
                 "sample_id": sample.get("_id", f"sample-{sample_idx}"),
+                "index": sample.get("index", sample_idx),
                 "error": str(e)
-            })
+            }
+
+    all_results_by_idx: Dict[int, Dict[str, Any]] = {}
+    if args.num_workers == 1:
+        for sample_idx in tqdm(sample_indices, desc="处理样本"):
+            all_results_by_idx[sample_idx] = run_one_sample(sample_idx)
+    else:
+        with ThreadPoolExecutor(max_workers=args.num_workers) as executor:
+            future_to_idx = {
+                executor.submit(run_one_sample, sample_idx): sample_idx
+                for sample_idx in sample_indices
+            }
+            for future in tqdm(as_completed(future_to_idx), total=len(future_to_idx), desc="处理样本"):
+                sample_idx = future_to_idx[future]
+                try:
+                    all_results_by_idx[sample_idx] = future.result()
+                except Exception as e:
+                    sample = all_samples[sample_idx]
+                    print(f"[ERROR] 样本 {sample_idx} 处理失败: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    all_results_by_idx[sample_idx] = {
+                        "sample_id": sample.get("_id", f"sample-{sample_idx}"),
+                        "index": sample.get("index", sample_idx),
+                        "error": str(e)
+                    }
+
+    all_results = [all_results_by_idx[idx] for idx in sample_indices if idx in all_results_by_idx]
     
     # 统计结果
     f1_scores = []

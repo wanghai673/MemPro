@@ -38,4 +38,7 @@ def load_local_env(env_path: str = ".env") -> Dict[str, str]:
 
 
 def get_env_or_default(env_name: str, default: str) -> str:
-    return os.getenv(env_name, default)
+    value = os.getenv(env_name)
+    if value is None or value.strip() == "":
+        return default
+    return value

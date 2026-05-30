@@ -46,6 +46,18 @@ def _search_faiss_index(index: faiss.Index, query_embeddings: np.ndarray, top_k:
     return scores_list, indices_list
 
 
+def _dense_vectors_from_output(output: Any) -> np.ndarray:
+    """
+    FlagEmbedding's BGE-M3 wrapper returns a dict with dense/sparse/colbert
+    outputs, while simpler encoders return the dense array directly.
+    """
+    if isinstance(output, dict):
+        output = output.get("dense_vecs")
+    if output is None:
+        raise ValueError("Dense encoder did not return dense vectors")
+    return np.asarray(output, dtype=np.float32)
+
+
 class DenseRetriever(AbsRetriever):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
@@ -219,11 +231,12 @@ class DenseRetriever(AbsRetriever):
             # 本地模式
             if self.model is None:
                 raise RuntimeError("DenseRetriever 模型未初始化，无法编码。请检查模型加载是否成功。")
-            return self.model.encode_corpus(
+            embeddings = self.model.encode_corpus(
                 texts,
                 batch_size=self.config.get("batch_size", 32),
                 max_length=self.config.get("max_length", 512),
             )
+            return _dense_vectors_from_output(embeddings)
 
     # ---------- 对外接口 ----------
     def load(self) -> None:
@@ -333,11 +346,12 @@ class DenseRetriever(AbsRetriever):
             queries_emb = self._encode_via_api(query_list, encode_type="query")
         else:
             # 本地模式
-            queries_emb = self.model.encode_queries(
+            queries_output = self.model.encode_queries(
                 query_list,
                 batch_size=self.config.get("batch_size", 32),
                 max_length=self.config.get("max_length", 512),
             )
+            queries_emb = _dense_vectors_from_output(queries_output)
 
         # 使用自定义的 search 函数
         scores_list, indices_list = _search_faiss_index(self.index, queries_emb, top_k)

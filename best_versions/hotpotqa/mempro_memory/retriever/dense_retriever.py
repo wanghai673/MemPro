@@ -19,7 +19,7 @@ def _build_faiss_index(embeddings: np.ndarray) -> faiss.Index:
     # 使用内积索引（cosine similarity）
     index = faiss.IndexFlatIP(dimension)
     # L2 归一化以支持 cosine similarity（复制数组以避免修改原始数据）
-    embeddings_normalized = embeddings.copy()
+    embeddings_normalized = np.ascontiguousarray(embeddings, dtype=np.float32)
     faiss.normalize_L2(embeddings_normalized)
     index.add(embeddings_normalized)
     return index
@@ -34,7 +34,7 @@ def _search_faiss_index(index: faiss.Index, query_embeddings: np.ndarray, top_k:
     返回: (scores_list, indices_list) 其中每个元素都是 (top_k,) 的数组
     """
     # L2 归一化查询向量（复制以避免修改原始数据）
-    query_embeddings_normalized = query_embeddings.copy()
+    query_embeddings_normalized = np.ascontiguousarray(query_embeddings, dtype=np.float32)
     faiss.normalize_L2(query_embeddings_normalized)
     
     # 搜索

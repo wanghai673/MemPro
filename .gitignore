@@ -9,9 +9,11 @@ build/
 dist/
 *.egg-info/
 data/
+data_temo/
 results/
 logs/
 *.log
 *.part
 *.tmp
 mempro_memory.egg-info/
+scripts/convert_longmemeval_memory_content.py

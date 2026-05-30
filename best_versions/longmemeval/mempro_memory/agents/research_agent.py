@@ -431,8 +431,8 @@ class ResearchAgent:
             "sorted_hits": [hit.model_dump() for hit in sorted_hits],
         }
         
-        # 统一进行一次 integrate，最多保留前 5 个候选页
-        # sorted_hits = sorted_hits[:5]
+        # 统一进行一次 integrate，最多保留前 10 个候选页
+        sorted_hits = sorted_hits[:10]
         self._last_search_trace["dedup_page_ids"] = [hit.page_id for hit in sorted_hits if hit.page_id is not None]
         self._last_search_trace["sorted_hits"] = [hit.model_dump() for hit in sorted_hits]
         return self._integrate(sorted_hits, result, question)

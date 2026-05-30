@@ -108,25 +108,11 @@ class ResearchAgent:
                 return_trace=True,
             )
 
-            iteration_usage = self._sum_usage_dicts(
-                planning_trace.get("usage"),
-                search_trace.get("usage"),
-                reflection_check_trace.get("usage"),
-                reflection_generate_trace.get("usage") if reflection_generate_trace else None,
-            )
-
             iterations.append({
                 "step": step,
                 "plan": plan.__dict__,
                 "temp_memory": temp.__dict__,
                 "decision": decision.__dict__,
-                "llm_calls": {
-                    "planning": planning_trace,
-                    "integration": search_trace,
-                    "reflection_check": reflection_check_trace,
-                    "reflection_generate": reflection_generate_trace,
-                },
-                "usage": iteration_usage,
             })
 
             if decision.enough:
@@ -142,7 +128,6 @@ class ResearchAgent:
             "iterations": iterations,
             "temp_memory": temp.__dict__,
             "integrated_memory": temp.content,
-            "usage": self._sum_usage_dicts(*(item.get("usage") for item in iterations)),
         }
         return ResearchOutput(integrated_memory=temp.content, raw_memory=raw)
 
