@@ -1,4 +1,4 @@
-# 🧬 MemPro
+# 🧬 MemPro: Agentic Memory Systems as Evolvable Programs
 
 MemPro is a failure-driven framework for evolving agent memory systems. Instead
 of treating memory as only stored content, MemPro treats the full memory
