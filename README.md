@@ -55,16 +55,41 @@ bash scripts/download_data.sh
 cp .env.example .env
 ```
 
-Edit `.env` with your OpenAI-compatible endpoint:
+Edit `.env` with your configuration. The full list of parameters is described below.
 
-```bash
-OPENAI_API_KEY=your_api_key_here
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_MODEL=gpt-4o-mini
-OPENAI_API_TYPE=openai
-```
+**Shared API Profile** — used by all agents unless a role-specific override is set.
 
-You can also set role-specific variables such as `MEMORY_MODEL`, `RESEARCH_MODEL`, `WORKING_MODEL`, and `JUDGE_MODEL`.
+| Variable | Description |
+|---|---|
+| `OPENAI_API_KEY` | API key for the OpenAI-compatible endpoint |
+| `OPENAI_BASE_URL` | Base URL of the API server (e.g. `https://api.openai.com/v1`) |
+| `OPENAI_MODEL` | Default model name used by all agents (e.g. `gpt-4o-mini`) |
+| `OPENAI_API_TYPE` | API type, typically `openai` |
+
+**Role-specific Overrides** — each agent (Memory, Research, Working, Judge) can use a different model or endpoint. Leave blank to fall back to the shared profile.
+
+| Variable | Description |
+|---|---|
+| `MEMORY_API_KEY` / `MEMORY_BASE_URL` / `MEMORY_MODEL` / `MEMORY_API_TYPE` | Config for the Memory Agent, which constructs and updates the memory bank |
+| `RESEARCH_API_KEY` / `RESEARCH_BASE_URL` / `RESEARCH_MODEL` / `RESEARCH_API_TYPE` | Config for the Research Agent, which retrieves and integrates memory to answer queries |
+| `WORKING_API_KEY` / `WORKING_BASE_URL` / `WORKING_MODEL` / `WORKING_API_TYPE` | Config for the Working Agent used during intermediate reasoning steps |
+| `JUDGE_API_KEY` / `JUDGE_BASE_URL` / `JUDGE_MODEL` / `JUDGE_API_TYPE` | Config for the Judge Agent used in LLM-as-a-Judge evaluation |
+
+**Embedding & Retrieval**
+
+| Variable | Default | Description |
+|---|---|---|
+| `MEMPRO_MODEL_BACKEND` | `api` | Backend for the embedding model; use `api` for remote inference or `local` for on-device |
+| `MEMPRO_EMBEDDING_MODEL` | `BAAI/bge-m3` | Embedding model used for dense retrieval and token-aware chunking |
+| `MEMPRO_DENSE_DEVICES` | `cuda:0` | CUDA device(s) assigned to the embedding model (e.g. `cuda:0`, `cuda:0,1`) |
+
+**Runtime Parallelism** — increase these only when your machine and API quota can support concurrent requests.
+
+| Variable | Default | Description |
+|---|---|---|
+| `MEMPRO_QUESTION_WORKERS` | `1` | Number of parallel workers for processing questions during evaluation |
+| `MEMPRO_MEMORY_WORKERS` | `1` | Number of parallel workers for memory bank construction |
+| `MEMPRO_NUM_WORKERS` | `1` | Global worker count fallback for other pipeline stages |
 
 > Keep `.env` local because it contains credentials. The repository already excludes it from version control.
 
