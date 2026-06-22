@@ -3,7 +3,7 @@
 <h1>MemPro: Agentic Memory Systems as Evolvable Programs</h1>
 
 <h5 align="center">
-<a href='https://github.com/wanghai673/MemPro'><img src='https://img.shields.io/badge/Paper-MemPro-red?logo=arxiv&logoColor=white'></a>
+<a href='https://arxiv.org/abs/2606.00619'><img src='https://img.shields.io/badge/Paper-MemPro-red?logo=arxiv&logoColor=white'></a>
 <a href='https://github.com/hotpotqa/hotpot'><img src='https://img.shields.io/badge/Dataset-HotpotQA-blue'></a>
 <a href='https://github.com/google-deepmind/narrativeqa'><img src='https://img.shields.io/badge/Dataset-NarrativeQA-blue'></a>
 <a href='https://github.com/snap-research/locomo'><img src='https://img.shields.io/badge/Dataset-LoCoMo-blue'></a>
@@ -15,6 +15,8 @@
 ## 📖 Introduction
 
 MemPro addresses the limitations of fixed-pipeline agentic memory systems by treating the entire memory construction–retrieval (MCR) pipeline as an evolvable program rather than adapting only the memory bank or prompt text. It maintains a version tree of runnable pipeline implementations, where an Evolving Agent iteratively selects promising versions, diagnoses recurring failure modes, and creates improved child versions through failure-mode-guided edit–debug refinement. MemPro consistently outperforms strong static and prompt-level evolving baselines within a few iterations across LongMemEval, LoCoMo, HotpotQA, and NarrativeQA, and continues to improve as the version tree expands.
+
+![](figs/pipeline.pdf)
 
 ## ⚙️ Setup
 
@@ -45,17 +47,6 @@ pip install -e .
 
 ```bash
 bash scripts/download_data.sh
-```
-
-This creates benchmark files under `data/`, including:
-
-```text
-data/locomo/locomo10.json
-data/longmemeval/longmemeval_s_cleaned.json
-data/hotpotqa/eval_400.json
-data/hotpotqa/eval_1600.json
-data/hotpotqa/eval_3200.json
-data/narrativeqa/*.parquet
 ```
 
 ### 5. Configure `.env`
@@ -120,14 +111,6 @@ python scripts/run_evolution.py longmemeval --execute
 python scripts/run_evolution.py narrativeqa --execute
 ```
 
-Choose a model if needed:
-
-```bash
-python scripts/run_evolution.py hotpotqa --model gpt-5.4-medium --execute
-```
-
-> The evolution workflow is intentionally separate from evaluation. Most users only need Part 1; Part 2 is for developing new MemPro versions.
-
 ## 📁 Repository Structure
 
 ```
@@ -136,6 +119,7 @@ MemPro/
 ├── requirements.txt
 ├── setup.py
 ├── pyproject.toml
+├── figs/                       # README figures
 ├── best_versions/              # Best evolved runnable MemPro frameworks
 │   ├── locomo/
 │   ├── longmemeval/
@@ -175,18 +159,18 @@ Our work is built on the following datasets and codebases, and we are deeply gra
 We appreciate your citations if you find our paper relevant and useful to your research!
 
 ```bibtex
-@article{wang2026mempro,
-    title  = {MemPro: Agentic Memory Systems as Evolvable Programs},
-    author = {Wang, Hai and others},
-    journal = {ArXiv preprint},
-    year   = {2026}
+@article{liu2026mempro,
+  title={MemPro: Agentic Memory Systems as Evolvable Programs},
+  author={Liu, Qingshan and Wang, Guoqing and Wu, Wen and Huang, Jingqi and Tao, Xinqi and Song, Dejia and Zhou, Jie and He, Liang},
+  journal={arXiv preprint arXiv:2606.00619},
+  year={2026}
 }
 ```
 
 ## 📧 Contact
 
-For questions, suggestions, or bug reports, please open an issue or contact the authors via the GitHub repository:
+For questions, suggestions, or bug reports, please contact:
 
 ```
-https://github.com/wanghai673/MemPro
+51285901015@stu.ecnu.edu.cn
 ```
