@@ -14,7 +14,7 @@
 
 ## 📖 Introduction
 
-Long-horizon autonomous agents require memory systems to retain and reuse historical information beyond finite context windows. Existing agentic memory systems follow a memory construction–retrieval (MCR) pipeline, but typically treat the surrounding pipeline as fixed after deployment—struggling with heterogeneous task-specific failure modes and growing misalignment between the memory bank and the pipeline over time. MemPro addresses these limitations by treating the **entire MCR pipeline as an evolvable program**: it maintains a version tree of runnable pipeline implementations, where an Evolving Agent iteratively selects promising versions, diagnoses recurring failures, and creates improved child versions through failure-mode-guided edit–debug refinement. Experiments on LongMemEval, LoCoMo, HotpotQA, and NarrativeQA show that MemPro consistently outperforms strong static and prompt-level evolving baselines within a few iterations, continues to improve with evolution, and achieves a favorable performance–cost trade-off.
+MemPro addresses the limitations of fixed-pipeline agentic memory systems by treating the entire memory construction–retrieval (MCR) pipeline as an evolvable program rather than adapting only the memory bank or prompt text. It maintains a version tree of runnable pipeline implementations, where an Evolving Agent iteratively selects promising versions, diagnoses recurring failure modes, and creates improved child versions through failure-mode-guided edit–debug refinement. MemPro consistently outperforms strong static and prompt-level evolving baselines within a few iterations across LongMemEval, LoCoMo, HotpotQA, and NarrativeQA, and continues to improve as the version tree expands.
 
 ## ⚙️ Setup
 
