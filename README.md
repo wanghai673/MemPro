@@ -14,14 +14,7 @@
 
 ## 📖 Introduction
 
-MemPro is a failure-driven framework for evolving agent memory systems. Instead of treating memory as only stored content, MemPro treats the full memory construction–retrieval pipeline as an **executable program** that can evolve, including memory writing, retrieval, evidence integration, context construction, and answer generation.
-
-Given benchmark failures, MemPro maintains a version tree of runnable memory framework variants, selects promising parent versions, edits prompts and framework code, debugs candidate descendants, and keeps improvements that generalize under a fixed evaluation protocol. This repository provides the best evolved MemPro versions for evaluation, together with benchmark-specific evolution workspaces for continuing the framework-evolution process.
-
-The repository has two main parts:
-
-1. **Evaluation**: run the best evolved MemPro versions and reproduce benchmark performance. This is the main path most users should follow.
-2. **Evolution**: inspect and continue benchmark-specific framework evolution with Codex and the `AGENTS.md` instructions under `MemPro/`.
+Long-horizon autonomous agents require memory systems to retain and reuse historical information beyond finite context windows. Existing agentic memory systems follow a memory construction–retrieval (MCR) pipeline, but typically treat the surrounding pipeline as fixed after deployment—struggling with heterogeneous task-specific failure modes and growing misalignment between the memory bank and the pipeline over time. MemPro addresses these limitations by treating the **entire MCR pipeline as an evolvable program**: it maintains a version tree of runnable pipeline implementations, where an Evolving Agent iteratively selects promising versions, diagnoses recurring failures, and creates improved child versions through failure-mode-guided edit–debug refinement. Experiments on LongMemEval, LoCoMo, HotpotQA, and NarrativeQA show that MemPro consistently outperforms strong static and prompt-level evolving baselines within a few iterations, continues to improve with evolution, and achieves a favorable performance–cost trade-off.
 
 ## ⚙️ Setup
 
