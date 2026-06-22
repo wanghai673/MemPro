@@ -1,9 +1,9 @@
 <div align="center">
 
-<h1>MemPro: Agentic Memory Systems as Evolvable Programs</h1>
+<h1>🧬 MemPro: Agentic Memory Systems as Evolvable Programs</h1>
 
 <h5 align="center">
-<a href='https://arxiv.org/abs/2606.00619'><img src='https://img.shields.io/badge/Paper-MemPro-red?logo=arxiv&logoColor=white'></a>
+<a href='https://github.com/wanghai673/MemPro'><img src='https://img.shields.io/badge/Paper-MemPro-red?logo=arxiv&logoColor=white'></a>
 <a href='https://github.com/hotpotqa/hotpot'><img src='https://img.shields.io/badge/Dataset-HotpotQA-blue'></a>
 <a href='https://github.com/google-deepmind/narrativeqa'><img src='https://img.shields.io/badge/Dataset-NarrativeQA-blue'></a>
 <a href='https://github.com/snap-research/locomo'><img src='https://img.shields.io/badge/Dataset-LoCoMo-blue'></a>
@@ -14,9 +14,7 @@
 
 ## 📖 Introduction
 
-MemPro addresses the limitations of fixed-pipeline agentic memory systems by treating the entire memory construction–retrieval (MCR) pipeline as an evolvable program rather than adapting only the memory bank or prompt text. It maintains a version tree of runnable pipeline implementations, where an Evolving Agent iteratively selects promising versions, diagnoses recurring failure modes, and creates improved child versions through failure-mode-guided edit–debug refinement. MemPro consistently outperforms strong static and prompt-level evolving baselines within a few iterations across LongMemEval, LoCoMo, HotpotQA, and NarrativeQA, and continues to improve as the version tree expands.
-
-![](figs/main.png)
+Long-horizon autonomous agents require memory systems to retain and reuse historical information beyond finite context windows. Existing agentic memory systems follow a memory construction–retrieval (MCR) pipeline, but typically treat the surrounding pipeline as fixed after deployment—struggling with heterogeneous task-specific failure modes and growing misalignment between the memory bank and the pipeline over time. MemPro addresses these limitations by treating the **entire MCR pipeline as an evolvable program**: it maintains a version tree of runnable pipeline implementations, where an Evolving Agent iteratively selects promising versions, diagnoses recurring failures, and creates improved child versions through failure-mode-guided edit–debug refinement. Experiments on LongMemEval, LoCoMo, HotpotQA, and NarrativeQA show that MemPro consistently outperforms strong static and prompt-level evolving baselines within a few iterations, continues to improve with evolution, and achieves a favorable performance–cost trade-off.
 
 ## ⚙️ Setup
 
@@ -49,47 +47,35 @@ pip install -e .
 bash scripts/download_data.sh
 ```
 
+This creates benchmark files under `data/`, including:
+
+```text
+data/locomo/locomo10.json
+data/longmemeval/longmemeval_s_cleaned.json
+data/hotpotqa/eval_400.json
+data/hotpotqa/eval_1600.json
+data/hotpotqa/eval_3200.json
+data/narrativeqa/*.parquet
+```
+
 ### 5. Configure `.env`
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your configuration. The full list of parameters is described below.
-
-**Shared API Profile** — used by all agents unless a role-specific override is set.
-
-| Variable | Description |
-|---|---|
-| `OPENAI_API_KEY` | API key for the OpenAI-compatible endpoint |
-| `OPENAI_BASE_URL` | Base URL of the API server (e.g. `https://api.openai.com/v1`) |
-| `OPENAI_MODEL` | Default model name used by all agents (e.g. `gpt-4o-mini`) |
-| `OPENAI_API_TYPE` | API type, typically `openai` |
-
-**Role-specific Overrides** — each agent (Memory, Research, Working, Judge) can use a different model or endpoint. Leave blank to fall back to the shared profile.
-
-| Variable | Description |
-|---|---|
-| `MEMORY_API_KEY` / `MEMORY_BASE_URL` / `MEMORY_MODEL` / `MEMORY_API_TYPE` | Config for the Memory Agent, which constructs and updates the memory bank |
-| `RESEARCH_API_KEY` / `RESEARCH_BASE_URL` / `RESEARCH_MODEL` / `RESEARCH_API_TYPE` | Config for the Research Agent, which retrieves and integrates memory to answer queries |
-| `WORKING_API_KEY` / `WORKING_BASE_URL` / `WORKING_MODEL` / `WORKING_API_TYPE` | Config for the Working Agent used during intermediate reasoning steps |
-| `JUDGE_API_KEY` / `JUDGE_BASE_URL` / `JUDGE_MODEL` / `JUDGE_API_TYPE` | Config for the Judge Agent used in LLM-as-a-Judge evaluation |
-
-**Embedding & Retrieval**
+Edit `.env` with your configuration:
 
 | Variable | Default | Description |
 |---|---|---|
-| `MEMPRO_MODEL_BACKEND` | `api` | Backend for the embedding model; use `api` for remote inference or `local` for on-device |
-| `MEMPRO_EMBEDDING_MODEL` | `BAAI/bge-m3` | Embedding model used for dense retrieval and token-aware chunking |
-| `MEMPRO_DENSE_DEVICES` | `cuda:0` | CUDA device(s) assigned to the embedding model (e.g. `cuda:0`, `cuda:0,1`) |
-
-**Runtime Parallelism** — increase these only when your machine and API quota can support concurrent requests.
-
-| Variable | Default | Description |
-|---|---|---|
-| `MEMPRO_QUESTION_WORKERS` | `1` | Number of parallel workers for processing questions during evaluation |
-| `MEMPRO_MEMORY_WORKERS` | `1` | Number of parallel workers for memory bank construction |
-| `MEMPRO_NUM_WORKERS` | `1` | Global worker count fallback for other pipeline stages |
+| `OPENAI_API_KEY` | — | API key for the OpenAI-compatible endpoint |
+| `OPENAI_BASE_URL` | `https://api.openai.com/v1` | Base URL of the API server |
+| `OPENAI_MODEL` | `gpt-4o-mini` | Model used by all agents |
+| `OPENAI_API_TYPE` | `openai` | API type |
+| `MEMPRO_EMBEDDING_MODEL` | `BAAI/bge-m3` | Embedding model for dense retrieval |
+| `MEMPRO_DENSE_DEVICES` | `cuda:0` | CUDA device(s) for the embedding model |
+| `MEMPRO_QUESTION_WORKERS` | `1` | Parallel workers for evaluation |
+| `MEMPRO_MEMORY_WORKERS` | `1` | Parallel workers for memory construction |
 
 > Keep `.env` local because it contains credentials. The repository already excludes it from version control.
 
@@ -136,6 +122,14 @@ python scripts/run_evolution.py longmemeval --execute
 python scripts/run_evolution.py narrativeqa --execute
 ```
 
+Choose a model if needed:
+
+```bash
+python scripts/run_evolution.py hotpotqa --model gpt-5.4-medium --execute
+```
+
+> The evolution workflow is intentionally separate from evaluation. Most users only need Part 1; Part 2 is for developing new MemPro versions.
+
 ## 📁 Repository Structure
 
 ```
@@ -144,7 +138,6 @@ MemPro/
 ├── requirements.txt
 ├── setup.py
 ├── pyproject.toml
-├── figs/                       # README figures
 ├── best_versions/              # Best evolved runnable MemPro frameworks
 │   ├── locomo/
 │   ├── longmemeval/
@@ -184,18 +177,18 @@ Our work is built on the following datasets and codebases, and we are deeply gra
 We appreciate your citations if you find our paper relevant and useful to your research!
 
 ```bibtex
-@article{liu2026mempro,
-  title={MemPro: Agentic Memory Systems as Evolvable Programs},
-  author={Liu, Qingshan and Wang, Guoqing and Wu, Wen and Huang, Jingqi and Tao, Xinqi and Song, Dejia and Zhou, Jie and He, Liang},
-  journal={arXiv preprint arXiv:2606.00619},
-  year={2026}
+@article{wang2026mempro,
+    title  = {MemPro: Agentic Memory Systems as Evolvable Programs},
+    author = {Wang, Hai and others},
+    journal = {ArXiv preprint},
+    year   = {2026}
 }
 ```
 
 ## 📧 Contact
 
-For questions, suggestions, or bug reports, please contact:
+For questions, suggestions, or bug reports, please open an issue or contact the authors via the GitHub repository:
 
 ```
-51285901015@stu.ecnu.edu.cn
+https://github.com/wanghai673/MemPro
 ```
