@@ -2,12 +2,13 @@
 
 <h1>🧬 MemPro: Agentic Memory Systems as Evolvable Programs</h1>
 
-<h5 align="center">
-<a href='https://arxiv.org/abs/2606.00619'><img src='https://img.shields.io/badge/Paper-arXiv-red?logo=arxiv&logoColor=white'></a>
-<a href='https://github.com/wanghai673/MemPro'><img src='https://img.shields.io/badge/Code-GitHub-black?logo=github'></a>
-<a href='https://huggingface.co/papers/2606.00619'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Paper-blue'></a>
+<div align="center">
 
-</h5>
+[![Paper](https://img.shields.io/badge/Paper-arXiv-b31b1b.svg?logo=arxiv)](https://arxiv.org/abs/2606.00619)
+[![HuggingFace](https://img.shields.io/badge/🤗%20Paper-Hugging%20Face-yellow)](https://huggingface.co/papers/2606.00619)
+[![GitHub](https://img.shields.io/badge/Code-GitHub-181717?logo=github&logoColor=white)](https://github.com/wanghai673/MemPro)
+
+</div>
 </div>
 
 ## 📖 Introduction
