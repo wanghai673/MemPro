@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>MemPro: Agentic Memory Systems as Evolvable Programs</h1>
+<h1>🧬 MemPro: Agentic Memory Systems as Evolvable Programs</h1>
 
 <h5 align="center">
 <a href='https://arxiv.org/abs/2606.00619'><img src='https://img.shields.io/badge/Paper-arXiv-red?logo=arxiv&logoColor=white'></a>
