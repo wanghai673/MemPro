@@ -57,10 +57,13 @@ cp .env.example .env
 
 Edit `.env` with your configuration:
 
-| Variable | Description |
-|---|---|
-| `OPENAI_API_KEY` | API key for the OpenAI-compatible endpoint |
-| `OPENAI_BASE_URL` | Base URL of the API server (e.g. `https://api.openai.com/v1`) |
+| Variable | Default | Description |
+|---|---|---|
+| `OPENAI_API_KEY` | — | API key for the OpenAI-compatible endpoint |
+| `OPENAI_BASE_URL` | `https://api.openai.com/v1` | Base URL of the API server |
+| `MEMPRO_QUESTION_WORKERS` | `24` | Parallel workers for processing questions during evaluation |
+| `MEMPRO_MEMORY_WORKERS` | `24` | Parallel workers for memory bank construction |
+| `MEMPRO_NUM_WORKERS` | `24` | Global worker count for other pipeline stages |
 
 > Keep `.env` local because it contains credentials. The repository already excludes it from version control.
 
