@@ -66,16 +66,10 @@ cp .env.example .env
 
 Edit `.env` with your configuration:
 
-| Variable | Default | Description |
-|---|---|---|
-| `OPENAI_API_KEY` | — | API key for the OpenAI-compatible endpoint |
-| `OPENAI_BASE_URL` | `https://api.openai.com/v1` | Base URL of the API server |
-| `OPENAI_MODEL` | `gpt-4o-mini` | Model used by all agents |
-| `OPENAI_API_TYPE` | `openai` | API type |
-| `MEMPRO_EMBEDDING_MODEL` | `BAAI/bge-m3` | Embedding model for dense retrieval |
-| `MEMPRO_DENSE_DEVICES` | `cuda:0` | CUDA device(s) for the embedding model |
-| `MEMPRO_QUESTION_WORKERS` | `1` | Parallel workers for evaluation |
-| `MEMPRO_MEMORY_WORKERS` | `1` | Parallel workers for memory construction |
+| Variable | Description |
+|---|---|
+| `OPENAI_API_KEY` | API key for the OpenAI-compatible endpoint |
+| `OPENAI_BASE_URL` | Base URL of the API server (e.g. `https://api.openai.com/v1`) |
 
 > Keep `.env` local because it contains credentials. The repository already excludes it from version control.
 
