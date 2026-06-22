@@ -3,11 +3,9 @@
 <h1>MemPro: Agentic Memory Systems as Evolvable Programs</h1>
 
 <h5 align="center">
-<a href='https://arxiv.org/abs/2606.00619'><img src='https://img.shields.io/badge/Paper-MemPro-red?logo=arxiv&logoColor=white'></a>
-<a href='https://github.com/hotpotqa/hotpot'><img src='https://img.shields.io/badge/Dataset-HotpotQA-blue'></a>
-<a href='https://github.com/google-deepmind/narrativeqa'><img src='https://img.shields.io/badge/Dataset-NarrativeQA-blue'></a>
-<a href='https://github.com/snap-research/locomo'><img src='https://img.shields.io/badge/Dataset-LoCoMo-blue'></a>
-<a href='https://github.com/xiaowu0162/longmemeval'><img src='https://img.shields.io/badge/Dataset-LongMemEval-blue'></a>
+<a href='https://arxiv.org/abs/2606.00619'><img src='https://img.shields.io/badge/Paper-arXiv-red?logo=arxiv&logoColor=white'></a>
+<a href='https://github.com/wanghai673/MemPro'><img src='https://img.shields.io/badge/Code-GitHub-black?logo=github'></a>
+<a href='https://huggingface.co/papers/2606.00619'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Paper-blue'></a>
 
 </h5>
 </div>
@@ -61,9 +59,9 @@ Edit `.env` with your configuration:
 |---|---|---|
 | `OPENAI_API_KEY` | — | API key for the OpenAI-compatible endpoint |
 | `OPENAI_BASE_URL` | `https://api.openai.com/v1` | Base URL of the API server |
-| `MEMPRO_QUESTION_WORKERS` | `24` | Parallel workers for processing questions during evaluation |
-| `MEMPRO_MEMORY_WORKERS` | `24` | Parallel workers for memory bank construction |
-| `MEMPRO_NUM_WORKERS` | `24` | Global worker count for other pipeline stages |
+| `MEMPRO_QUESTION_WORKERS` | `1` | Parallel workers for processing questions during evaluation |
+| `MEMPRO_MEMORY_WORKERS` | `1` | Parallel workers for memory bank construction |
+| `MEMPRO_NUM_WORKERS` | `1` | Global worker count for other pipeline stages |
 
 > Keep `.env` local because it contains credentials. The repository already excludes it from version control.
 
