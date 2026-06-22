@@ -149,7 +149,6 @@ Our work is built on the following datasets and codebases, and we are deeply gra
 - [LoCoMo](https://github.com/snap-research/locomo): Long-context multi-session conversation benchmark.
 - [LongMemEval](https://github.com/xiaowu0162/longmemeval): Long-term memory evaluation benchmark.
 - [General Agentic Memory (GAM)](https://github.com/VectorSpaceLab/general-agentic-memory): Prior memory-framework research we build upon.
-- [LightMem](https://github.com/zjunlp/LightMem): Memory framework ideas and code we build upon.
 
 ## 🥰 Citation
 
