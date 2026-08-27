@@ -20,7 +20,7 @@
 
 ## 💡 Method Overview
 
-MemPro is a framework that helps memory systems improve themselves by learning from failure cases. It automatically refines how memories are organized, retrieved, and used. Unlike methods that only optimize prompts, MemPro can also edit and debug the pipeline code. It keeps previous solutions in a version tree, allowing the system to reuse strong versions, explore different improvement directions, and continuously improve its performance.
+MemPro treats the entire memory construction–retrieval (MCR) pipeline, including its prompts and code, as an evolvable program. It uses evaluation logs to select a promising version, edits and debugs it to create a new candidate, and evaluates the result. Each candidate is added to a version tree, allowing strong solutions to be reused while different improvement directions are explored through repeated selection, expansion, and evaluation.
 
 <p align="center">
   <img src="figs/main.png" width="100%">
@@ -94,13 +94,7 @@ MemPro/
 
 ## 📄 Acknowledgement
 
-Our work is built on the following datasets and codebases, and we are deeply grateful for their contributions.
-
-- [HotpotQA](https://github.com/hotpotqa/hotpot): Multi-hop question answering benchmark.
-- [NarrativeQA](https://github.com/google-deepmind/narrativeqa): Reading comprehension benchmark over narratives.
-- [LoCoMo](https://github.com/snap-research/locomo): Long-context multi-session conversation benchmark.
-- [LongMemEval](https://github.com/xiaowu0162/longmemeval): Long-term memory evaluation benchmark.
-- [General Agentic Memory (GAM)](https://github.com/VectorSpaceLab/general-agentic-memory): Prior memory-framework research we build upon.
+We thank [General Agentic Memory (GAM)](https://github.com/VectorSpaceLab/general-agentic-memory) for its valuable open-source contribution.
 
 ## 🥰 Citation
 
