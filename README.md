@@ -2,6 +2,8 @@
 
 <h1>🧬 MemPro: Agentic Memory Systems as Evolvable Programs</h1>
 
+<h5>If you like our project, please give us a star ⭐ on GitHub for the latest update.</h5>
+
 <div align="center">
 
 [![Paper](https://img.shields.io/badge/Paper-arXiv-b31b1b.svg?logo=arxiv)](https://arxiv.org/abs/2606.00619)
@@ -11,104 +13,60 @@
 </div>
 </div>
 
-## 📖 Introduction
+## 📣 Latest News
 
+- **[Aug 21, 2026]**: 🎉 MemPro has been accepted to the **Main Conference of EMNLP 2026**!
+- **[May 30, 2026]**: 📄 Our paper is now available on [arXiv](https://arxiv.org/abs/2606.00619) and [Hugging Face](https://huggingface.co/papers/2606.00619).
 
-MemPro addresses the limitations of fixed-pipeline agentic memory systems by treating the entire memory construction–retrieval (MCR) pipeline as an **evolvable program** rather than adapting only the memory bank or prompt text. It maintains a **version tree** of runnable pipeline implementations, where an Evolving Agent iteratively selects promising versions, diagnoses recurring failure modes, and creates improved child versions through failure-mode-guided edit–debug refinement. MemPro consistently outperforms strong static and prompt-level evolving baselines within a few iterations across LongMemEval, LoCoMo, HotpotQA, and NarrativeQA, and continues to improve as the version tree expands.
+## 💡 Method Overview
 
-![](figs/main.png)
+MemPro treats the entire memory construction–retrieval (MCR) pipeline—including prompts and executable logic for memory construction, retrieval, evidence integration, reflection, and answer generation—as an **evolvable program**. It maintains a **version tree** of runnable memory systems, where an Evolving Agent selects promising versions, diagnoses recurring failure modes, and creates improved child versions through targeted edit–debug refinement. This tree-based evolution preserves strong historical versions while enabling continued system-level improvement.
 
-## ⚙️ Setup
+<p align="center">
+  <img src="figs/main.png" width="100%">
+</p>
 
-### 1. Clone
+## 🚀 Quick Start
+
+### 1. Installation
 
 ```bash
 git clone https://github.com/wanghai673/MemPro.git
-cd MemPro 
-```
+cd MemPro
 
-### 2. Create Conda Environment
-
-```bash
 conda create -n mempro python=3.10 -y
 conda activate mempro
-```
 
-### 3. Install Dependencies
-
-```bash
 pip install -r requirements.txt
 pip install -e .
 ```
 
-> `pip install -e .` installs the initial `mempro_memory` package from `initial_framework/`. Evaluation scripts override it with the best evolved runtime for each benchmark.
-
-### 4. Download Data
+### 2. Prepare Data and API
 
 ```bash
 bash scripts/download_data.sh
-```
-
-### 5. Configure `.env`
-
-```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your configuration:
+Set your `OPENAI_API_KEY` and, if needed, the OpenAI-compatible endpoint and model in `.env`.
+Dense retrieval runs on CPU by default. With a CUDA-enabled PyTorch build, set `MEMPRO_DENSE_DEVICES=cuda:0` to use a GPU.
 
-| Variable | Default | Description |
-|---|---|---|
-| `OPENAI_API_KEY` | — | API key for the OpenAI-compatible endpoint |
-| `OPENAI_BASE_URL` | `https://api.openai.com/v1` | Base URL of the API server |
-| `MEMPRO_QUESTION_WORKERS` | `1` | Parallel workers for processing questions during evaluation |
-| `MEMPRO_MEMORY_WORKERS` | `1` | Parallel workers for memory bank construction |
-| `MEMPRO_NUM_WORKERS` | `1` | Global worker count for other pipeline stages |
-
-> Keep `.env` local because it contains credentials. The repository already excludes it from version control.
-
-## 🔧 Reproduction Guide
-
-### Part 1: Evaluation
-
-Each evaluation script loads `.env`, uses the corresponding runtime under `best_versions/`, writes outputs to `results/`, and writes logs to `logs/`. The default worker count is `1`; increase it with environment variables only when your machine and API quota can support parallel requests.
-
-#### LoCoMo
+### 3. Evaluation
 
 ```bash
 bash scripts/eval_locomo.sh
-```
-
-#### LongMemEval
-
-```bash
 bash scripts/eval_longmemeval.sh
-```
-
-#### HotpotQA
-
-```bash
 bash scripts/eval_hotpotqa.sh
-HOTPOTQA_DATA=data/hotpotqa/eval_1600.json bash scripts/eval_hotpotqa.sh
-HOTPOTQA_DATA=data/hotpotqa/eval_3200.json bash scripts/eval_hotpotqa.sh
-```
-
-#### NarrativeQA
-
-```bash
 bash scripts/eval_narrativeqa.sh
 ```
 
-### Part 2: Evolution
-
-The `MemPro/` directory contains benchmark-specific evolution workspaces. To continue evolution with Codex, choose a benchmark:
+### 4. Evolution
 
 ```bash
-python scripts/run_evolution.py hotpotqa --execute
-python scripts/run_evolution.py locomo --execute
-python scripts/run_evolution.py longmemeval --execute
-python scripts/run_evolution.py narrativeqa --execute
+python scripts/run_evolution.py <benchmark> --execute
 ```
+
+Supported benchmarks: `locomo`, `longmemeval`, `hotpotqa`, and `narrativeqa`.
 
 ## 📁 Repository Structure
 

@@ -412,7 +412,9 @@ def process_sample(
     use_schema: bool = False,
     memory_api_type: str = "openai",
     research_api_type: str = "openai",
-    working_api_type: str = "openai"
+    working_api_type: str = "openai",
+    dense_model: str = "BAAI/bge-m3",
+    dense_devices: str = "cpu",
 ):
     """
     使用 MemPro 框架处理单个样本。
@@ -547,12 +549,12 @@ def process_sample(
             
             dense_retriever_devices = [
                 item.strip()
-                for item in _env_value("DENSE_RETRIEVER_DEVICES", "cuda:0").split(",")
+                for item in dense_devices.split(",")
                 if item.strip()
             ]
             dense_config = DenseRetrieverConfig(
                 index_dir=dense_index_dir,
-                model_name="BAAI/bge-m3",
+                model_name=dense_model,
                 devices=dense_retriever_devices,
             )
 
@@ -751,6 +753,10 @@ def main():
                         help="并行处理样本的 worker 数量；1 表示串行")
     parser.add_argument("--embedding-model-path", type=str, default=None, 
                         help="Embedding 模型路径，用于精确 token 计算（可选）")
+    parser.add_argument("--dense-model", type=str, default="BAAI/bge-m3",
+                        help="Dense 检索模型名称或本地路径")
+    parser.add_argument("--dense-devices", type=str, default="cpu",
+                        help="Dense 检索设备，逗号分隔")
     
     # Memory Generator 配置
     parser.add_argument("--memory-api-key", type=str, default=_role_profile_value("MEMORY", "API_KEY", "empty"), help="Memory 模型 API Key")
@@ -763,7 +769,7 @@ def main():
     parser.add_argument("--research-base-url", type=str, default=_role_profile_value("RESEARCH", "BASE_URL", "https://api.openai.com/v1"), help="Research 模型 Base URL")
     parser.add_argument("--research-model", type=str, default=_role_profile_value("RESEARCH", "MODEL", "gpt-4o-mini"), help="Research 模型名称")
     parser.add_argument("--research-api-type", type=str, default=_role_profile_value("RESEARCH", "API_TYPE", "openai"), choices=["openai", "vllm"], help="Research 模型 API 类型")
-    parser.add_argument("--use-schema", type=bool, default=False, help="是否使用 schema")
+    parser.add_argument("--use-schema", action=argparse.BooleanOptionalAction, default=False, help="是否使用 schema")
 
     # Working Generator 配置
     parser.add_argument("--working-api-key", type=str, default=_role_profile_value("WORKING", "API_KEY", "empty"), help="Working 模型 API Key")
@@ -842,7 +848,9 @@ def main():
                 use_schema=args.use_schema,
                 memory_api_type=args.memory_api_type,
                 research_api_type=args.research_api_type,
-                working_api_type=args.working_api_type
+                working_api_type=args.working_api_type,
+                dense_model=args.dense_model,
+                dense_devices=args.dense_devices,
             )
             print(f"[OK] 样本 {sample_idx} 处理完成")
             return result

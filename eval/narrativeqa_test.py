@@ -278,27 +278,6 @@ def clean_pred_answer(answer_text: str) -> str:
     return text
 
 
-def postprocess_pred_answer(pred_answer: str, question: str, research_summary: str) -> str:
-    """Apply evidence-gated normalizations for NarrativeQA short answers."""
-    pred = (pred_answer or "").strip()
-    question_text = question or ""
-    summary = research_summary or ""
-    norm_pred = normalize_answer(pred)
-
-    if re.match(r"^\s*how\s+did\b", question_text, flags=re.IGNORECASE):
-        if re.search(r"\bchild\b[^.?!]{0,120}\b(?:grows?|grew)\s+in\s+(?:my|her)\s+belly\b", summary, flags=re.IGNORECASE):
-            return "she told him she was pregnant with a child not of his line"
-
-    if re.search(r"\bhow\s+many\s+children\b", question_text, flags=re.IGNORECASE):
-        if norm_pred in {"one child", "1 child"} and re.search(r"\bmother\s+of\s+his\s+poor\s+boy\b|\bhis\s+poor\s+boy\b", summary, flags=re.IGNORECASE):
-            return "one son"
-
-    if re.search(r"\bwhat\s+job\b|\bwhat\s+profession\b", question_text, flags=re.IGNORECASE):
-        if "balloon cart" in norm_pred and re.search(r"\bballoon cart\b", summary, flags=re.IGNORECASE):
-            return "sells balloons"
-
-    return pred
-
 # ========== 答案提取和评估 ==========
 def normalize_answer(s):
     def remove_articles(text):
@@ -358,7 +337,7 @@ def process_sample(
     research_api_type: str = "openai",
     working_api_type: str = "openai",
     dense_model: str = "BAAI/bge-m3",
-    dense_devices: str = "cuda:0",
+    dense_devices: str = "cpu",
 ):
     """
     使用 MemPro 框架处理单个样本。
@@ -633,7 +612,6 @@ def process_sample(
             # 提取答案
 
             pred_answer = clean_pred_answer(answer_text)
-            pred_answer = postprocess_pred_answer(pred_answer, question, research_summary)
             result["response"] = answer_text
             result["pred"] = pred_answer
                         
@@ -702,7 +680,7 @@ def main():
                         help="Embedding 模型路径，用于精确 token 计算（可选）")
     parser.add_argument("--dense-model", type=str, default="BAAI/bge-m3",
                         help="Dense 检索模型名称或本地路径")
-    parser.add_argument("--dense-devices", type=str, default="cuda:0",
+    parser.add_argument("--dense-devices", type=str, default="cpu",
                         help="Dense 检索设备，逗号分隔")
     parser.add_argument("--seed", type=int, default=None, help="随机种子，用于打乱数据集（可选）")
     parser.add_argument("--num-workers", type=int, default=1,
@@ -719,7 +697,7 @@ def main():
     parser.add_argument("--research-base-url", type=str, default="https://api.openai.com/v1", help="Research 模型 Base URL")
     parser.add_argument("--research-model", type=str, default="gpt-4o-mini", help="Research 模型名称")
     parser.add_argument("--research-api-type", type=str, default="openai", choices=["openai", "vllm"], help="Research 模型 API 类型")
-    parser.add_argument("--use-schema", type=bool, default=False, help="是否使用 schema")
+    parser.add_argument("--use-schema", action=argparse.BooleanOptionalAction, default=False, help="是否使用 schema")
     
     # Working Generator 配置
     parser.add_argument("--working-api-key", type=str, default="empty", help="Working 模型 API Key")

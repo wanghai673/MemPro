@@ -414,49 +414,12 @@ def format_question_with_date(sample: Dict[str, Any]) -> str:
     return question
 
 
-def list_sorted_dirs(root: str) -> List[str]:
-    if not os.path.isdir(root):
-        raise FileNotFoundError(f"Missing memory root: {root}")
-    dirs = [d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d))]
-    return sorted(dirs)
-
-
-def build_answer_session_cache_index(memory_root: str) -> Dict[str, str]:
-    """Map each session_id in memory_meta.json to its cache directory."""
-    index: Dict[str, str] = {}
-    for dirname in list_sorted_dirs(memory_root):
-        cache_dir = os.path.join(memory_root, dirname)
-        meta_path = os.path.join(cache_dir, "memory_meta.json")
-        if not os.path.exists(meta_path):
-            continue
-        try:
-            meta = load_json(meta_path)
-        except Exception:
-            continue
-        for session_id in meta.get("session_ids", []) or []:
-            index[str(session_id)] = cache_dir
-    return index
-
-
 def resolve_cache_dir_for_sample(
     sample: Dict[str, Any],
-    answer_session_cache_index: Dict[str, str],
     memory_root: str,
     sample_index: int,
 ) -> str:
-    answer_session_ids = [str(x) for x in sample.get("answer_session_ids", []) or []]
-    matched_dirs = {
-        answer_session_cache_index[sid]
-        for sid in answer_session_ids
-        if sid in answer_session_cache_index
-    }
-    if len(matched_dirs) == 1:
-        return next(iter(matched_dirs))
-    if len(matched_dirs) > 1:
-        raise ValueError(
-            f"answer_session_ids map to multiple cache dirs for {sample.get('question_id')}: "
-            f"{sorted(matched_dirs)}"
-        )
+    """Resolve inference cache from haystack identity without using gold labels."""
     return os.path.join(memory_root, memory_key(sample, sample_index))
 
 
@@ -593,7 +556,6 @@ def build_generators(args: argparse.Namespace):
 def process_sample(
     idx: int,
     sample: Dict[str, Any],
-    answer_session_cache_index: Dict[str, str],
     args: argparse.Namespace,
 ) -> Dict[str, Any]:
     sample_dir = os.path.join(args.outdir, f"{idx:06d}_{sample.get('question_id', f'sample_{idx}')}")
@@ -602,7 +564,6 @@ def process_sample(
     try:
         cache_dir = resolve_cache_dir_for_sample(
             sample=sample,
-            answer_session_cache_index=answer_session_cache_index,
             memory_root=args.memory_root,
             sample_index=idx,
         )
@@ -675,7 +636,7 @@ def main() -> None:
         help="Dense model name or local model path.",
     )
     parser.add_argument("--dense-api-url", type=str, default=None)
-    parser.add_argument("--dense-devices", type=str, default="cuda:0")
+    parser.add_argument("--dense-devices", type=str, default="cpu")
 
     parser.add_argument("--memory-api-key", type=str, default=role_env("MEMORY", "API_KEY", "empty"))
     parser.add_argument("--memory-base-url", type=str, default=role_env("MEMORY", "BASE_URL", "https://api.openai.com/v1"))
@@ -704,7 +665,6 @@ def main() -> None:
     end_idx = args.end_idx if args.end_idx is not None else len(samples)
     sample_indices = list(range(args.start_idx, min(end_idx, len(samples))))
     ensure_memory_caches(samples, sample_indices, args)
-    answer_session_cache_index = build_answer_session_cache_index(args.memory_root)
 
     os.makedirs(args.outdir, exist_ok=True)
 
@@ -715,7 +675,6 @@ def main() -> None:
                 process_sample(
                     idx=idx,
                     sample=samples[idx],
-                    answer_session_cache_index=answer_session_cache_index,
                     args=args,
                 )
             )
@@ -726,7 +685,6 @@ def main() -> None:
                     process_sample,
                     idx,
                     samples[idx],
-                    answer_session_cache_index,
                     args,
                 ): idx
                 for idx in sample_indices

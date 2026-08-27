@@ -608,6 +608,8 @@ def process_sample(
     force_rerun: bool = False,
     rebuild_memory: bool = False,
     selected_question_indices: Optional[List[int]] = None,
+    dense_model: str = "BAAI/bge-m3",
+    dense_devices: str = "cpu",
 ):
     """
     使用 MemPro 框架处理单个样本。
@@ -760,7 +762,8 @@ def process_sample(
 
             dense_config = DenseRetrieverConfig(
                 index_dir=dense_index_dir,
-                model_name="BAAI/bge-m3"
+                model_name=dense_model,
+                devices=[item.strip() for item in dense_devices.split(",") if item.strip()],
             )
 
             # dense_config = DenseRetrieverConfig(
@@ -1080,7 +1083,7 @@ def main():
     parser.add_argument("--research-base-url", type=str, default=get_env_or_default("RESEARCH_BASE_URL", get_env_or_default("OPENAI_BASE_URL", "https://api.openai.com/v1")), help="Research 模型 Base URL")
     parser.add_argument("--research-model", type=str, default=get_env_or_default("RESEARCH_MODEL", get_env_or_default("OPENAI_MODEL", "gpt-4o-mini")), help="Research 模型名称")
     parser.add_argument("--research-api-type", type=str, default=get_env_or_default("RESEARCH_API_TYPE", get_env_or_default("OPENAI_API_TYPE", "openai")), choices=["openai", "vllm"], help="Research 模型 API 类型")
-    parser.add_argument("--use-schema", type=bool, default=True, help="是否使用 schema")
+    parser.add_argument("--use-schema", action=argparse.BooleanOptionalAction, default=True, help="是否使用 schema")
 
     # Working Generator 配置
     parser.add_argument("--working-api-key", type=str, default=get_env_or_default("WORKING_API_KEY", get_env_or_default("OPENAI_API_KEY", "empty")), help="Working 模型 API Key")
@@ -1091,6 +1094,8 @@ def main():
     parser.add_argument("--judge-base-url", type=str, default=get_env_or_default("JUDGE_BASE_URL", get_env_or_default("OPENAI_BASE_URL", "https://api.openai.com/v1")), help="Judge 模型 Base URL")
     parser.add_argument("--judge-model", type=str, default=get_env_or_default("JUDGE_MODEL", get_env_or_default("OPENAI_MODEL", "gpt-4o-mini")), help="Judge 模型名称")
     parser.add_argument("--question-workers", type=int, default=32, help="单个样本内问题并行 worker 数")
+    parser.add_argument("--dense-model", type=str, default="BAAI/bge-m3", help="Dense 检索模型名称或本地路径")
+    parser.add_argument("--dense-devices", type=str, default="cpu", help="Dense 检索设备，逗号分隔")
     parser.add_argument("--conv-id", type=str, default=None, help="只运行指定 sample_id / conv-id")
     parser.add_argument("--question-index", type=int, default=None, help="只运行指定 question 索引（1-based）")
     parser.add_argument("--rebuild-memory", action="store_true", help="重建 memory/pages/indexes，但保留样本目录中的其他结果文件")
@@ -1181,6 +1186,8 @@ def main():
                 args.force_rerun,
                 args.rebuild_memory,
                 [args.question_index] if args.question_index is not None else None,
+                dense_model=args.dense_model,
+                dense_devices=args.dense_devices,
             )
             print(f"[OK] 样本 {sample_idx} 处理完成")
             all_results.extend(results)

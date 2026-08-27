@@ -12,6 +12,8 @@ MAX_TOKENS="${HOTPOTQA_MAX_TOKENS:-2048}"
 NUM_WORKERS="${HOTPOTQA_NUM_WORKERS:-1}"
 MEMORY_WORKERS="${HOTPOTQA_MEMORY_WORKERS:-1}"
 EMBEDDING_MODEL_PATH="${MEMPRO_EMBEDDING_MODEL:-BAAI/bge-m3}"
+DENSE_MODEL="${MEMPRO_DENSE_MODEL:-$EMBEDDING_MODEL_PATH}"
+DENSE_DEVICES="${MEMPRO_DENSE_DEVICES:-cpu}"
 PYTHONPATH_PREFIX="${HOTPOTQA_PYTHONPATH_PREFIX:-best_versions/hotpotqa}"
 WORKING_PROMPTS_PATH="${HOTPOTQA_WORKING_PROMPTS_PATH:-best_versions/hotpotqa/mempro_memory/prompts/working_prompts.py}"
 LOG_FILE="${HOTPOTQA_LOG_FILE:-logs/hotpotqa_inference.log}"
@@ -31,5 +33,7 @@ python -u eval/hotpotqa_test.py \
   --num-workers "$NUM_WORKERS" \
   --memory-workers "$MEMORY_WORKERS" \
   --embedding-model-path "$EMBEDDING_MODEL_PATH" \
+  --dense-model "$DENSE_MODEL" \
+  --dense-devices "$DENSE_DEVICES" \
   "${EXTRA_ARGS[@]}" \
   "$@" 2>&1 | tee "$LOG_FILE"

@@ -208,22 +208,6 @@ class ResearchAgent:
         return terms
 
     @staticmethod
-    def _title_tokens(question: str) -> List[str]:
-        tokens: List[str] = []
-        seen = set()
-        for phrase in re.findall(r'"([^"]+)"', question):
-            for raw in re.findall(r"[A-Za-z0-9']+", phrase.lower()):
-                if len(raw) >= 3 and raw not in seen:
-                    seen.add(raw)
-                    tokens.append(raw)
-        for raw in re.findall(r"\b[A-Z][A-Za-z0-9']+(?:\s+[A-Z][A-Za-z0-9']+)*", question):
-            for part in re.findall(r"[A-Za-z0-9']+", raw.lower()):
-                if len(part) >= 3 and part not in seen:
-                    seen.add(part)
-                    tokens.append(part)
-        return tokens
-
-    @staticmethod
     def _term_matches_line(term: str, line_lower: str) -> bool:
         if term in line_lower:
             return True
@@ -262,127 +246,6 @@ class ResearchAgent:
         if len(excerpt) <= max_chars:
             return excerpt
         return excerpt[:max_chars].rsplit("\n", 1)[0].strip()
-
-    @staticmethod
-    def _document_chunks(page_text: str) -> List[str]:
-        chunks = re.split(r"(?=Document\s+\d+:)", page_text)
-        return [chunk.strip() for chunk in chunks if chunk.strip()]
-
-    @staticmethod
-    def _supplement_trigger(question: str) -> Optional[str]:
-        q = question.lower()
-        if "2001 census" in q or ("population" in q and "census" in q):
-            return "population"
-        if "centuries" in q and ("built" in q or "dwelling place" in q):
-            return "centuries"
-        if "formerly known" in q or "formerly called" in q:
-            return "former_name"
-        if "under which" in q and "vice president" in q:
-            return "vice_president"
-        if "both contained scenes" in q and "1959 soviet" in q:
-            return "soviet_feature"
-        if "documentary film festival" in q and "british journal of literary essays" in q:
-            return "documentary_festival"
-        return None
-
-    @classmethod
-    def _lexical_score(cls, text: str, terms: List[str], title_terms: List[str], trigger: str) -> int:
-        lower = text.lower()
-        score = 0
-        for term in terms:
-            if cls._term_matches_line(term, lower):
-                score += 2
-        for term in title_terms:
-            if cls._term_matches_line(term, lower):
-                score += 4
-        if trigger == "population":
-            for phrase, weight in (("2001 census", 10), ("population", 5), ("town itself", 4)):
-                if phrase in lower:
-                    score += weight
-        elif trigger == "centuries":
-            for phrase, weight in (("three centuries", 12), ("centuries", 6), ("built", 4), ("dwelling", 4)):
-                if phrase in lower:
-                    score += weight
-        elif trigger == "former_name":
-            for phrase, weight in (("formerly known", 10), ("from 1988 to 1996", 8), ("north atlantic conference", 10)):
-                if phrase in lower:
-                    score += weight
-        elif trigger == "vice_president":
-            for phrase, weight in (
-                ("vice president", 10),
-                ("governor", 4),
-                ("nelson rockefeller", 12),
-                ("committee on the employment of minority groups", 10),
-                ("secretary", 5),
-            ):
-                if phrase in lower:
-                    score += weight
-        elif trigger == "soviet_feature":
-            for phrase, weight in (
-                ("queen of blood", 8),
-                ("battle beyond the sun", 8),
-                ("nebo zovyot", 14),
-                ("1959 soviet", 10),
-                ("contained scenes", 6),
-                ("reused special effects footage", 5),
-                ("mechte navstrechu", -4),
-            ):
-                if phrase in lower:
-                    score += weight
-        elif trigger == "documentary_festival":
-            for phrase, weight in (
-                ("london international documentary festival", 14),
-                ("london review of books", 12),
-                ("march and april", 14),
-                ("british journal of literary essays", 8),
-                ("published fortnightly", 6),
-                ("new haven documentary film festival", -8),
-                ("month of june", -5),
-            ):
-                if phrase in lower:
-                    score += weight
-        return score
-
-    def _supplemental_page_hits(
-        self,
-        question: str,
-        plan: SearchPlan,
-        max_hits: int = 2,
-    ) -> List[Hit]:
-        trigger = self._supplement_trigger(question)
-        if trigger is None:
-            return []
-        terms = self._question_terms(question)
-        title_terms = self._title_tokens(question)
-        for query in list(plan.keyword_collection or []) + list(plan.vector_queries or []):
-            terms.extend(self._question_terms(str(query)))
-            title_terms.extend(self._title_tokens(str(query)))
-        terms = list(dict.fromkeys(terms))
-        title_terms = list(dict.fromkeys(title_terms))
-
-        scored: List[Tuple[int, int, int, str]] = []
-        for page_idx, page in enumerate(self.page_store.load()):
-            for chunk_idx, chunk in enumerate(self._document_chunks(page.content)):
-                score = self._lexical_score(chunk, terms, title_terms, trigger)
-                if score >= 14:
-                    scored.append((score, page_idx, chunk_idx, chunk))
-
-        supplemental: List[Hit] = []
-        for score, page_idx, chunk_idx, chunk in sorted(scored, key=lambda item: (-item[0], item[1], item[2])):
-            snippet = chunk
-            if len(snippet) > 900:
-                snippet = snippet[:900].rsplit(" ", 1)[0].strip()
-            supplemental.append(
-                Hit(
-                    page_id=str(page_idx),
-                    snippet=snippet,
-                    source=f"lexical_{trigger}_scan",
-                    meta={"score": float(score), "supplemental": True},
-                )
-            )
-            if len(supplemental) >= max_hits:
-                break
-        return supplemental
 
     def _update_retrievers(self):
         """确保检索器索引是最新的"""
@@ -532,8 +395,6 @@ class ResearchAgent:
                         hits.extend(page_results)
                     all_hits.extend(hits)
 
-        all_hits.extend(self._supplemental_page_hits(question, plan))
-
         # Deduplicate hits by page_id
         if not all_hits:
             if return_trace:
@@ -544,9 +405,6 @@ class ResearchAgent:
         unique_hits: Dict[str, Hit] = {}  # page_id -> Hit
         hits_without_id: List[Hit] = []  # 没有 page_id 的 hits
         for hit in all_hits:
-            if hit.meta and hit.meta.get("supplemental"):
-                hits_without_id.append(hit)
-                continue
             if hit.page_id:
                 # 如果这个 page_id 还没出现过，或者当前 hit 的得分更高（如果有的话），则更新
                 if hit.page_id not in unique_hits:
