@@ -26,7 +26,7 @@ We introduce MemPro, a framework for automatically evolving agentic memory syste
   <img src="figs/main.png" width="100%">
 </p>
 
-### 📈 Evolution Trajectory
+## 📈 Evolution Trajectory
 
 MemPro evolution trajectory on LoCoMo. MemPro progressively improves through prompt- and code-level updates, outperforming GEPA and GAM.
 
