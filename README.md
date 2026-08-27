@@ -20,7 +20,7 @@
 
 ## 💡 Method Overview
 
-MemPro treats the entire memory construction–retrieval (MCR) pipeline, including its prompts and code, as an evolvable program. It uses evaluation logs to select a promising version, edits and debugs it to create a new candidate, and evaluates the result. Each candidate is added to a version tree, allowing strong solutions to be reused while different improvement directions are explored through repeated selection, expansion, and evaluation.
+We introduce MemPro, a framework for automatically evolving agentic memory systems. By treating the entire memory construction–retrieval (MCR) pipeline, including its prompts and code, as an evolvable program, MemPro iteratively selects promising versions, expands them through targeted editing and debugging, and evaluates new candidates within a version tree.
 
 <p align="center">
   <img src="figs/main.png" width="100%">
@@ -94,7 +94,7 @@ MemPro/
 
 ## 📄 Acknowledgement
 
-We thank [General Agentic Memory (GAM)](https://github.com/VectorSpaceLab/general-agentic-memory) for its valuable open-source contribution.
+Our initial framework is adapted from [General Agentic Memory (GAM)](https://github.com/VectorSpaceLab/general-agentic-memory), and we thank the authors for their valuable open-source contribution.
 
 ## 🥰 Citation
 
