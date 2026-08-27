@@ -20,7 +20,7 @@
 
 ## 💡 Method Overview
 
-MemPro treats the entire memory construction–retrieval (MCR) pipeline—including prompts and executable logic for memory construction, retrieval, evidence integration, reflection, and answer generation—as an **evolvable program**. It maintains a **version tree** of runnable memory systems, where an Evolving Agent selects promising versions, diagnoses recurring failure modes, and creates improved child versions through targeted edit–debug refinement. This tree-based evolution preserves strong historical versions while enabling continued system-level improvement.
+MemPro is a framework that helps memory systems improve themselves by learning from failure cases. It automatically refines how memories are organized, retrieved, and used. Unlike methods that only optimize prompts, MemPro can also edit and debug the pipeline code. It keeps previous solutions in a version tree, allowing the system to reuse strong versions, explore different improvement directions, and continuously improve its performance.
 
 <p align="center">
   <img src="figs/main.png" width="100%">
@@ -34,7 +34,7 @@ MemPro treats the entire memory construction–retrieval (MCR) pipeline—includ
 git clone https://github.com/wanghai673/MemPro.git
 cd MemPro
 
-conda create -n mempro python=3.10 -y
+conda create -n mempro python=3.10 openjdk=21 -y
 conda activate mempro
 
 pip install -r requirements.txt
@@ -48,7 +48,7 @@ bash scripts/download_data.sh
 cp .env.example .env
 ```
 
-### Evaluation
+### 3. Evaluation
 
 ```bash
 bash scripts/eval_locomo.sh
@@ -57,10 +57,8 @@ bash scripts/eval_locomo.sh
 ### 4. Evolution
 
 ```bash
-python scripts/run_evolution.py <benchmark> --execute
+python scripts/run_evolution.py locomo --execute
 ```
-
-Supported benchmarks: `locomo`, `longmemeval`, `hotpotqa`, and `narrativeqa`.
 
 ## 📁 Repository Structure
 

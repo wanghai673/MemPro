@@ -13,6 +13,7 @@ import json
 import math
 import time
 import shutil
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from collections import defaultdict, Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -1093,15 +1094,33 @@ def main():
     parser.add_argument("--judge-api-key", type=str, default=get_env_or_default("JUDGE_API_KEY", get_env_or_default("OPENAI_API_KEY", "empty")), help="Judge 模型 API Key")
     parser.add_argument("--judge-base-url", type=str, default=get_env_or_default("JUDGE_BASE_URL", get_env_or_default("OPENAI_BASE_URL", "https://api.openai.com/v1")), help="Judge 模型 Base URL")
     parser.add_argument("--judge-model", type=str, default=get_env_or_default("JUDGE_MODEL", get_env_or_default("OPENAI_MODEL", "gpt-4o-mini")), help="Judge 模型名称")
-    parser.add_argument("--question-workers", type=int, default=32, help="单个样本内问题并行 worker 数")
-    parser.add_argument("--dense-model", type=str, default="BAAI/bge-m3", help="Dense 检索模型名称或本地路径")
-    parser.add_argument("--dense-devices", type=str, default="cpu", help="Dense 检索设备，逗号分隔")
+    parser.add_argument("--question-workers", type=int, default=int(get_env_or_default("MEMPRO_QUESTION_WORKERS", "1")), help="单个样本内问题并行 worker 数")
+    parser.add_argument("--dense-model", type=str, default=get_env_or_default("MEMPRO_EMBEDDING_MODEL", "BAAI/bge-m3"), help="Dense 检索模型名称或本地路径")
+    parser.add_argument("--dense-devices", type=str, default=get_env_or_default("MEMPRO_DENSE_DEVICES", "cpu"), help="Dense 检索设备，逗号分隔")
     parser.add_argument("--conv-id", type=str, default=None, help="只运行指定 sample_id / conv-id")
     parser.add_argument("--question-index", type=int, default=None, help="只运行指定 question 索引（1-based）")
     parser.add_argument("--rebuild-memory", action="store_true", help="重建 memory/pages/indexes，但保留样本目录中的其他结果文件")
     parser.add_argument("--force-rerun", action="store_true", help="强制清空样本目录并重建记忆与索引")
 
     args = parser.parse_args()
+
+    if not Path(args.data).is_file():
+        parser.error(f"LoCoMo data not found: {args.data}. Run bash scripts/download_data.sh first.")
+
+    placeholder_keys = {"", "empty", "your_api_key_here"}
+    api_profiles = (
+        ("memory", args.memory_api_type, args.memory_api_key, args.memory_base_url),
+        ("research", args.research_api_type, args.research_api_key, args.research_base_url),
+        ("working", args.working_api_type, args.working_api_key, args.working_base_url),
+        ("judge", "openai", args.judge_api_key, args.judge_base_url),
+    )
+    for role, api_type, api_key, base_url in api_profiles:
+        is_local = any(host in base_url.lower() for host in ("localhost", "127.0.0.1", "0.0.0.0"))
+        if api_type == "openai" and not is_local and api_key.strip().lower() in placeholder_keys:
+            parser.error(f"Set a valid {role} API key in .env before running evaluation.")
+
+    if args.question_workers < 1:
+        parser.error("--question-workers must be at least 1.")
     
     print("=" * 60)
     print("MemPro 框架 + LoCoMo 数据集测试")

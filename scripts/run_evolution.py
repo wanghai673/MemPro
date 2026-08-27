@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 
 
-BENCHMARKS = ("locomo", "longmemeval", "hotpotqa", "narrativeqa")
+BENCHMARKS = ("locomo",)
 
 
 def build_prompt(benchmark: str) -> str:
@@ -24,7 +24,7 @@ def build_prompt(benchmark: str) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Launch Codex for MemPro evolution.")
     parser.add_argument("benchmark", choices=BENCHMARKS)
-    parser.add_argument("--model", default="gpt-5.4-medium")
+    parser.add_argument("--model", default=None, help="Optional Codex model override.")
     parser.add_argument("--prompt", default=None)
     parser.add_argument("--execute", action="store_true", help="Run Codex instead of only printing the command.")
     parser.add_argument("--dry-run", action="store_true", help="Print the command without running it.")
@@ -38,14 +38,10 @@ def main() -> int:
         raise SystemExit(f"AGENTS.md not found in workspace: {workspace}")
 
     prompt = args.prompt or build_prompt(args.benchmark)
-    command = [
-        "codex",
-        "--model",
-        args.model,
-        "-C",
-        str(workspace),
-        prompt,
-    ]
+    command = ["codex"]
+    if args.model:
+        command.extend(["--model", args.model])
+    command.extend(["-C", str(workspace), prompt])
 
     print(" ".join(command))
     if args.dry_run or not args.execute:

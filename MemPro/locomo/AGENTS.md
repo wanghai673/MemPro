@@ -8,37 +8,13 @@ work.
 
 ## Mission
 
-Continuously improve LoCoMo performance by evolving MemPro memory prompts and
-agent framework behavior.
+Continuously improve LoCoMo LLM-as-a-Judge accuracy by evolving MemPro prompts
+and framework code. Focus on recurring failure cases and avoid broad
+regressions. When accuracy is tied or nearly tied, prefer lower token usage.
 
-Primary objective:
-
-- improve held-out LoCoMo accuracy after selecting versions only from the
-  evolution split
-- prefer changes that fix recurring failures across Single Hop, Multi Hop,
-  Temporal, and Open Domain questions
-- preserve exact entities, dates, user preferences, and session-specific
-  evidence when those details are answer-bearing
-
-Secondary objective:
-
-- prefer lower token usage when accuracy is tied or nearly tied
-- avoid changes that improve one category by causing broad regressions in
-  previously stable categories
-
-Diagnostic signals:
-
-- category-level accuracy
-- low-scoring question traces
-- retrieved pages and memory abstracts
-- final assembled context
-- judge labels and reasons
-- token usage when available
-
-The optimization target is the MemPro framework itself: `memory_agent.py`,
-`research_agent.py`, memory prompts, research prompts, and task-specific final
-answer prompts. Do not edit data, labels, judge prompts, or evaluation metrics
-to improve scores.
+Improve the memory construction, retrieval, evidence integration, and answer
+generation pipeline. Do not edit data, labels, judge prompts, or evaluation
+metrics to improve scores.
 
 ## Workspace Layout
 
