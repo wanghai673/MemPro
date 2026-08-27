@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>🧬 MemPro: Agentic Memory Systems as Evolvable Programs</h1>
+<h1>✨ MemPro: Agentic Memory Systems as Evolvable Programs</h1>
 
 <h5>If you like our project, please give us a star ⭐ on GitHub for the latest update.</h5>
 
@@ -48,16 +48,10 @@ bash scripts/download_data.sh
 cp .env.example .env
 ```
 
-Set your `OPENAI_API_KEY` and, if needed, the OpenAI-compatible endpoint and model in `.env`.
-Dense retrieval runs on CPU by default. With a CUDA-enabled PyTorch build, set `MEMPRO_DENSE_DEVICES=cuda:0` to use a GPU.
-
-### 3. Evaluation
+### Evaluation
 
 ```bash
 bash scripts/eval_locomo.sh
-bash scripts/eval_longmemeval.sh
-bash scripts/eval_hotpotqa.sh
-bash scripts/eval_narrativeqa.sh
 ```
 
 ### 4. Evolution
