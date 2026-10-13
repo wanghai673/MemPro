@@ -56,10 +56,36 @@ bash scripts/download_data.sh
 cp .env.example .env
 ```
 
+Edit `.env` with your API credentials and model:
+
+```dotenv
+OPENAI_API_KEY=your_api_key_here
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_API_TYPE=openai
+```
+
+- `OPENAI_API_KEY`: your API provider's key.
+- `OPENAI_BASE_URL`: the provider's OpenAI-compatible API base URL, usually ending in `/v1`.
+- `OPENAI_MODEL`: the model ID available at that endpoint.
+- `OPENAI_API_TYPE`: keep `openai` for OpenAI-compatible APIs.
+
+Leave the role-specific fields blank to use the shared configuration. You can optionally set separate API keys, base URLs, and models through `MEMORY_*` (memory construction), `RESEARCH_*` (retrieval reasoning), `WORKING_*` (answer generation), and `JUDGE_*` (scoring). Run the evaluation scripts from the repository root so they can load `.env`.
+
 ### 3. Evaluation
 
 ```bash
+# LoCoMo
 bash scripts/eval_locomo.sh
+
+# LongMemEval
+bash scripts/eval_longmemeval.sh
+
+# HotpotQA
+bash scripts/eval_hotpotqa.sh
+
+# NarrativeQA
+bash scripts/eval_narrativeqa.sh
 ```
 
 ### 4. Evolution
