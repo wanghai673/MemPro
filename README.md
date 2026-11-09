@@ -149,12 +149,8 @@ We appreciate your citations if you find our paper relevant and useful to your r
 }
 ```
 
-## 💬 微信交流
+## 💬 Contact
 
-<p align="center">
-  欢迎加微信交流学习 😊
-</p>
+Feel free to connect on WeChat to share ideas and learn together!
 
-<p align="center">
-  <img src="figs/wechat.jpg" alt="微信二维码" width="240">
-</p>
+<img src="figs/wechat.jpg" alt="WeChat QR code" width="240">
