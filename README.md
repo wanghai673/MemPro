@@ -7,7 +7,6 @@
 <div align="center">
 
 [![Paper](https://img.shields.io/badge/Paper-EMNLP%202026-blue.svg)](https://aclanthology.org/2026.emnlp-main.1364/)
-[![DOI](https://img.shields.io/badge/DOI-10.18653%2F2026.emnlp--main.1364-blue.svg)](https://doi.org/10.18653/2026.emnlp-main.1364)
 [![arXiv](https://img.shields.io/badge/arXiv-2606.00619-b31b1b.svg?logo=arxiv)](https://arxiv.org/abs/2606.00619)
 [![HuggingFace](https://img.shields.io/badge/🤗%20Paper-Hugging%20Face-yellow)](https://huggingface.co/papers/2606.00619)
 [![GitHub](https://img.shields.io/badge/Code-GitHub-181717?logo=github&logoColor=white)](https://github.com/wanghai673/MemPro)
