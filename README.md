@@ -6,7 +6,9 @@
 
 <div align="center">
 
-[![Paper](https://img.shields.io/badge/Paper-arXiv-b31b1b.svg?logo=arxiv)](https://arxiv.org/abs/2606.00619)
+[![Paper](https://img.shields.io/badge/Paper-EMNLP%202026-blue.svg)](https://aclanthology.org/2026.emnlp-main.1364/)
+[![DOI](https://img.shields.io/badge/DOI-10.18653%2F2026.emnlp--main.1364-blue.svg)](https://doi.org/10.18653/2026.emnlp-main.1364)
+[![arXiv](https://img.shields.io/badge/arXiv-2606.00619-b31b1b.svg?logo=arxiv)](https://arxiv.org/abs/2606.00619)
 [![HuggingFace](https://img.shields.io/badge/🤗%20Paper-Hugging%20Face-yellow)](https://huggingface.co/papers/2606.00619)
 [![GitHub](https://img.shields.io/badge/Code-GitHub-181717?logo=github&logoColor=white)](https://github.com/wanghai673/MemPro)
 
@@ -135,11 +137,15 @@ Our initial framework is adapted from [General Agentic Memory (GAM)](https://git
 We appreciate your citations if you find our paper relevant and useful to your research!
 
 ```bibtex
-@article{liu2026mempro,
-  title={MemPro: Agentic Memory Systems as Evolvable Programs},
+@inproceedings{liu-etal-2026-mempro,
+  title={{M}em{P}ro: Agentic Memory Systems as Evolvable Programs},
   author={Liu, Qingshan and Wang, Guoqing and Wu, Wen and Huang, Jingqi and Tao, Xinqi and Song, Dejia and Zhou, Jie and He, Liang},
-  journal={arXiv preprint arXiv:2606.00619},
-  year={2026}
+  booktitle={Proceedings of the 2026 Conference on Empirical Methods in Natural Language Processing},
+  year={2026},
+  publisher={Association for Computational Linguistics},
+  pages={31124--31143},
+  url={https://aclanthology.org/2026.emnlp-main.1364/},
+  doi={10.18653/2026.emnlp-main.1364}
 }
 ```
 
