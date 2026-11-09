@@ -156,3 +156,7 @@ For questions, suggestions, or bug reports, please contact:
 ```
 51285901015@stu.ecnu.edu.cn
 ```
+
+WeChat:
+
+<img src="figs/wechat.jpg" alt="WeChat QR code for wanghai673" width="300">
