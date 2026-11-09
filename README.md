@@ -149,14 +149,12 @@ We appreciate your citations if you find our paper relevant and useful to your r
 }
 ```
 
-## 📧 Contact
+## 💬 微信交流
 
-For questions, suggestions, or bug reports, please contact:
+<p align="center">
+  欢迎加微信交流学习 😊
+</p>
 
-```
-51285901015@stu.ecnu.edu.cn
-```
-
-WeChat:
-
-<img src="figs/wechat.jpg" alt="WeChat QR code for wanghai673" width="300">
+<p align="center">
+  <img src="figs/wechat.jpg" alt="微信二维码" width="240">
+</p>
